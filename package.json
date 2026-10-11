@@ -1,0 +1,14 @@
+{
+  "name": "specparts49",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Многостраничный статический сайт Спецпартс49",
+  "type": "module",
+  "scripts": {
+    "build:demo": "node scripts/build.mjs demo",
+    "build:production": "node scripts/build.mjs production",
+    "check:demo": "node scripts/check.mjs .demo demo",
+    "check:production": "node scripts/check.mjs dist production"
+  },
+  "engines": { "node": ">=20" }
+}

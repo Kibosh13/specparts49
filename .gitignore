@@ -1,0 +1,53 @@
+# Credentials and environment
+.env
+.env.*
+**/.env
+**/.env.*
+*.pem
+*.key
+credentials*
+.openai/
+
+# Dependencies and caches
+node_modules/
+.cache/
+.npm/
+.pnpm-store/
+__pycache__/
+*.pyc
+.venv/
+
+# Generated deployments, local builds and temporary files
+dist/
+.demo/
+.production/
+build/
+out/
+work/
+tmp/
+temp/
+coverage/
+test-results/
+playwright-report/
+*.log
+*.tmp
+*.swp
+*.bak
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+
+# Local databases and backups
+*.db
+*.sqlite
+*.sqlite3
+*.sql
+*.dump
+*.backup
+
+# OS and editor state
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
