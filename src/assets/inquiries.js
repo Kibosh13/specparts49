@@ -92,9 +92,10 @@
       if (!request.elements.comment.value) request.elements.comment.value = 'Нужен подбор запчасти Caterpillar по программе SIS, артикул неизвестен.';
     }
     if (params.get('article')) request.elements.article.value=params.get('article').slice(0,150);
-    if (['Euroricambi','MCP'].includes(params.get('brand'))) {
-      const brand = params.get('brand');
-      request.elements.comment.value = 'Интересует продукция ' + brand + '. ' + request.elements.comment.value;
+    const requestedBrand = params.get('brand')?.trim();
+    if (requestedBrand && /^[\p{L}\p{N} .&-]{1,60}$/u.test(requestedBrand)) {
+      const prefix = 'Интересует продукция ' + requestedBrand + '. ';
+      if (!request.elements.comment.value.startsWith(prefix)) request.elements.comment.value = prefix + request.elements.comment.value;
     }
   }
   const offersContainer = document.getElementById('offers-content');

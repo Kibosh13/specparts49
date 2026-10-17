@@ -1,0 +1,241 @@
+[
+  {
+    "id": "ctp",
+    "name": "CTP",
+    "asset": "assets/brands/logos/ctp.png",
+    "source_page": "https://imachinery.ru/",
+    "source_image": "https://imachinery.ru/bitrix/templates/main_bootstrap_geo/images/brand3.png",
+    "checked_on": "2026-10-17",
+    "presentation": "graphic-logo"
+  },
+  {
+    "id": "kmp",
+    "name": "KMP",
+    "asset": "assets/brands/logos/kmp.png",
+    "source_page": "https://www.kmpbrand.com/",
+    "source_image": "https://www.kmpbrand.com/wp-content/uploads/2022/10/kmp-brand-worldwide.png",
+    "checked_on": "2026-10-17",
+    "presentation": "graphic-logo"
+  },
+  {
+    "id": "cgr",
+    "name": "CGR",
+    "asset": "assets/brands/logos/cgr.svg",
+    "source_page": "https://ghinassi.com/",
+    "source_image": "https://ghinassi.com/wp-content/uploads/2023/07/logo.svg",
+    "checked_on": "2026-10-17",
+    "presentation": "graphic-logo"
+  },
+  {
+    "id": "itr",
+    "name": "ITR",
+    "asset": "assets/brands/logos/itr.png",
+    "source_page": "https://itrworld.com/",
+    "source_image": "https://itrworld.com/wp-content/uploads/2025/10/ITR-logo.png",
+    "checked_on": "2026-10-17",
+    "presentation": "graphic-logo"
+  },
+  {
+    "id": "etp",
+    "name": "ETP",
+    "asset": "assets/brands/logos/etp.webp",
+    "source_page": "https://www.etpbonomi.it/",
+    "source_image": "https://www.etpbonomi.it/wp-content/uploads/2025/03/ETP_logo_rgb.webp",
+    "checked_on": "2026-10-17",
+    "presentation": "graphic-logo"
+  },
+  {
+    "id": "caterpillar",
+    "name": "CATERPILLAR",
+    "asset": "assets/brands/logos/caterpillar.svg",
+    "source_page": "https://commons.wikimedia.org/wiki/File:Caterpillar_logo.svg",
+    "source_image": "https://upload.wikimedia.org/wikipedia/commons/d/d0/Caterpillar_logo.svg",
+    "checked_on": "2026-10-17",
+    "presentation": "graphic-logo"
+  },
+  {
+    "id": "komatsu",
+    "name": "KOMATSU",
+    "asset": "assets/brands/logos/komatsu.svg",
+    "source_page": "https://www.komatsu.com/en-us",
+    "source_image": "https://www.komatsu.com/content/dam/komatsu/icons/website-app/logo.svg",
+    "checked_on": "2026-10-17",
+    "presentation": "graphic-logo"
+  },
+  {
+    "id": "sudo-gasket",
+    "name": "SUDO GASKET",
+    "asset": "assets/brands/logos/sudo-gasket.jpg",
+    "source_page": "http://sudogasket.com/",
+    "source_image": "http://sudogasket.com/images/index_03.jpg",
+    "checked_on": "2026-10-17",
+    "presentation": "graphic-logo"
+  },
+  {
+    "id": "world-gasket",
+    "name": "WORLD GASKET",
+    "asset": "assets/brands/logos/world-gasket.png",
+    "source_page": "https://imachinery.ru/",
+    "source_image": "https://imachinery.ru/bitrix/templates/main_bootstrap_geo/images/brand4.png",
+    "checked_on": "2026-10-17",
+    "presentation": "graphic-logo"
+  },
+  {
+    "id": "nok",
+    "name": "NOK",
+    "asset": "assets/brands/logos/nok.png",
+    "source_page": "https://www.nokgrp.com/en/",
+    "source_image": "https://www.nokgrp.com/assets/images/business/logo-mark-nok.png",
+    "checked_on": "2026-10-17",
+    "presentation": "graphic-logo"
+  },
+  {
+    "id": "hp",
+    "name": "HP",
+    "asset": null,
+    "source_page": "https://findom.net/katalog",
+    "source_image": null,
+    "checked_on": "2026-10-17",
+    "presentation": "text-name-only",
+    "identity_reference": "https://kaufbund.kz/product/koltso-uplotnitelnoe-07000-12135-hp",
+    "note": "Отраслевое обозначение HP подтверждено каталогами. Проверяемый графический логотип не найден; отображается обычное текстовое название."
+  },
+  {
+    "id": "ofm",
+    "name": "OFM",
+    "asset": "assets/brands/logos/ofm.png",
+    "source_page": "https://www.ofmtopline.com/",
+    "source_image": "https://www.ofmtopline.com/wp-content/uploads/2021/10/OFM-logo-RGB.png",
+    "checked_on": "2026-10-17",
+    "presentation": "graphic-logo"
+  },
+  {
+    "id": "timken",
+    "name": "TIMKEN",
+    "asset": "assets/brands/logos/timken.svg",
+    "source_page": "https://www.timken.com/",
+    "source_image": "https://www.timken.com/wp-content/uploads/2026/06/timken-logo.svg",
+    "checked_on": "2026-10-17",
+    "presentation": "graphic-logo"
+  },
+  {
+    "id": "john-deere",
+    "name": "JOHN DEERE",
+    "asset": "assets/brands/logos/john-deere.svg",
+    "source_page": "https://en.wikipedia.org/wiki/File:John_Deere_Logo_%E2%80%93_Flat_2_Color.svg",
+    "source_image": "https://upload.wikimedia.org/wikipedia/en/0/02/John_Deere_Logo_%E2%80%93_Flat_2_Color.svg",
+    "checked_on": "2026-10-17",
+    "presentation": "graphic-logo"
+  },
+  {
+    "id": "perkins",
+    "name": "PERKINS",
+    "asset": "assets/brands/logos/perkins.svg",
+    "source_page": "https://commons.wikimedia.org/wiki/File:Perkins-Logo.svg",
+    "source_image": "https://upload.wikimedia.org/wikipedia/commons/1/14/Perkins-Logo.svg",
+    "checked_on": "2026-10-17",
+    "presentation": "graphic-logo"
+  },
+  {
+    "id": "cummins",
+    "name": "CUMMINS",
+    "asset": "assets/brands/logos/cummins.svg",
+    "source_page": "https://commons.wikimedia.org/wiki/File:Cummins_logo.svg",
+    "source_image": "https://upload.wikimedia.org/wikipedia/commons/c/c4/Cummins_logo.svg",
+    "checked_on": "2026-10-17",
+    "presentation": "graphic-logo"
+  },
+  {
+    "id": "ntn",
+    "name": "NTN",
+    "asset": "assets/brands/logos/ntn.svg",
+    "source_page": "https://ntnamericas.com/",
+    "source_image": "https://ntnamericas.com/wp-content/themes/ntn/images/ntn-logo.svg",
+    "checked_on": "2026-10-17",
+    "presentation": "graphic-logo"
+  },
+  {
+    "id": "imachinery",
+    "name": "IMACHINERY",
+    "asset": "assets/brands/logos/imachinery.svg",
+    "source_page": "https://imachinery.ru/",
+    "source_image": "https://imachinery.ru/bitrix/templates/main_bootstrap_geo/images/im.svg",
+    "checked_on": "2026-10-17",
+    "presentation": "graphic-logo"
+  },
+  {
+    "id": "krauf",
+    "name": "KRAUF",
+    "asset": "assets/brands/logos/krauf.png",
+    "source_page": "https://krauf-official.ru/",
+    "source_image": "https://krauf-official.ru/wp-content/uploads/2023/03/krauf-logo.png",
+    "checked_on": "2026-10-17",
+    "presentation": "graphic-logo"
+  },
+  {
+    "id": "ga-ricambi",
+    "name": "GA RICAMBI",
+    "asset": "assets/brands/logos/ga-ricambi.png",
+    "source_page": "https://www.garicambi.com/",
+    "source_image": "https://www.garicambi.com/wp-content/themes/garicambi/img/logo-new-ga.png",
+    "checked_on": "2026-10-17",
+    "presentation": "graphic-logo"
+  },
+  {
+    "id": "sf",
+    "name": "SF",
+    "asset": "assets/brands/logos/sf.webp",
+    "source_page": "https://www.sf-filter.com/en",
+    "source_image": "https://assets-eu-01.kc-usercontent.com:443/56432693-becf-0138-94d8-0aca3d9faca2/646b36cf-ea29-4680-99f9-7eeccffa566f/logo_sf_y_s.webp",
+    "checked_on": "2026-10-17",
+    "presentation": "graphic-logo",
+    "matched_name": "SF-Filter",
+    "identity_reference": "https://trackcenter-mag.ru/catalog/prochee"
+  },
+  {
+    "id": "dzl",
+    "name": "DZL",
+    "asset": null,
+    "source_page": "https://t-2k.ru/blogs/news/novoe-postuplenie-paltsev-i-vtulok-dzl-dlya-tehniki-caterpillar-v-moskve",
+    "source_image": null,
+    "checked_on": "2026-10-17",
+    "presentation": "text-name-only",
+    "note": "Бренд DZL для спецтехники подтвержден каталогом. Не путать с магазином DZLparts.ru или автомобильным брендом DLZ. Графический логотип не подтвержден; отображается обычное текстовое название."
+  },
+  {
+    "id": "agama",
+    "name": "AGAMA",
+    "asset": "assets/brands/logos/agama.png",
+    "source_page": "https://rst-motors.ru/info/brands/agama/",
+    "source_image": "https://rst-motors.ru/upload/resize_cache/iblock/ef0/270_175_140cd750bba9870f18aada2478b24840a/ef0c8c95b54a06a3bbcf6b0698812878.png",
+    "checked_on": "2026-10-17",
+    "presentation": "graphic-logo"
+  },
+  {
+    "id": "mcp",
+    "name": "MCP",
+    "asset": "assets/brands/mcp-logo.png",
+    "source_page": "Материалы, предоставленные компанией",
+    "source_image": null,
+    "checked_on": "2026-10-17",
+    "presentation": "graphic-logo"
+  },
+  {
+    "id": "euroricambi",
+    "name": "EURORICAMBI",
+    "asset": "assets/brands/euroricambi-logo.png",
+    "source_page": "Материалы, предоставленные компанией",
+    "source_image": null,
+    "checked_on": "2026-10-17",
+    "presentation": "graphic-logo"
+  },
+  {
+    "id": "maguro",
+    "name": "MAGURO",
+    "asset": "assets/brands/logos/maguro.jpg",
+    "source_page": "https://www.maguroindonesia.com/",
+    "source_image": "https://www.maguroindonesia.com/images/maguro_logo.jpg",
+    "checked_on": "2026-10-17",
+    "presentation": "graphic-logo"
+  }
+]
