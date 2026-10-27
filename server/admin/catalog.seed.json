@@ -1,0 +1,773 @@
+{
+  "categories": [
+    {
+      "id": "engine",
+      "name": "Запчасти для ДВС",
+      "published": true,
+      "order": 0,
+      "description": "Поршни, прокладки и детали двигателя",
+      "image": "assets/piston.svg"
+    },
+    {
+      "id": "transmission",
+      "name": "Запчасти для трансмиссии",
+      "published": true,
+      "order": 1,
+      "description": "Шестерни и фрикционные элементы",
+      "image": "assets/brands/euroricambi-gear-2.webp"
+    },
+    {
+      "id": "electric",
+      "name": "Запчасти для электрической системы",
+      "published": true,
+      "order": 2,
+      "description": "Стартеры, датчики и электрокомпоненты",
+      "image": "assets/starter.svg"
+    },
+    {
+      "id": "hydraulic",
+      "name": "Запчасти для гидравлики",
+      "published": true,
+      "order": 3,
+      "description": "Гидроцилиндры, рукава и уплотнения",
+      "image": "assets/hydraulic.svg"
+    },
+    {
+      "id": "fuel",
+      "name": "Запчасти для топливной системы",
+      "published": true,
+      "order": 4,
+      "description": "Форсунки и топливные насосы",
+      "image": "assets/injector.svg"
+    },
+    {
+      "id": "brake",
+      "name": "Запчасти для тормозной системы",
+      "published": true,
+      "order": 5,
+      "description": "Диски и комплектующие тормозных узлов",
+      "image": "assets/brake-disc.svg"
+    },
+    {
+      "id": "cooling",
+      "name": "Запчасти для системы охлаждения",
+      "published": true,
+      "order": 6,
+      "description": "Радиаторы и насосы охлаждения",
+      "image": "assets/radiator.svg"
+    },
+    {
+      "id": "filters",
+      "name": "Фильтры",
+      "published": true,
+      "order": 7,
+      "description": "Масляные, воздушные и топливные",
+      "image": "assets/filter-group.svg"
+    },
+    {
+      "id": "assemblies",
+      "name": "Узлы и агрегаты",
+      "published": true,
+      "order": 8,
+      "description": "Двигатели, трансмиссии и редукторы",
+      "image": "assets/engine-assembly.svg"
+    }
+  ],
+  "products": [
+    {
+      "id": "piston",
+      "name": "Поршень двигателя",
+      "cat": "engine",
+      "types": [
+        "bulldozer",
+        "loader",
+        "dumptruck",
+        "grader"
+      ],
+      "asset": "piston",
+      "desc": "Детали цилиндропоршневой группы. Для подбора укажите модель и серийный номер двигателя, размер или артикул поршня.",
+      "published": true,
+      "example": true,
+      "order": 0,
+      "article": "",
+      "brand": "",
+      "stock": "unknown",
+      "quantity": null,
+      "price": null,
+      "specs": ""
+    },
+    {
+      "id": "engine-gasket",
+      "name": "Комплект прокладок ДВС",
+      "cat": "engine",
+      "types": [
+        "bulldozer",
+        "loader",
+        "dumptruck",
+        "grader"
+      ],
+      "asset": "seal",
+      "desc": "Прокладки и уплотнения двигателя. Подбор по модели двигателя, серийному номеру и объёму ремонта.",
+      "published": true,
+      "example": true,
+      "order": 1,
+      "article": "",
+      "brand": "",
+      "stock": "unknown",
+      "quantity": null,
+      "price": null,
+      "specs": ""
+    },
+    {
+      "id": "transmission-gear",
+      "name": "Шестерня трансмиссии",
+      "cat": "transmission",
+      "types": [
+        "bulldozer",
+        "loader",
+        "dumptruck",
+        "grader"
+      ],
+      "asset": "gear",
+      "image": "assets/brands/euroricambi-gear-2.webp",
+      "desc": "Детали трансмиссии спецтехники. Укажите модель агрегата, артикул, размеры и количество зубьев.",
+      "published": true,
+      "example": true,
+      "order": 2,
+      "article": "",
+      "brand": "",
+      "stock": "unknown",
+      "quantity": null,
+      "price": null,
+      "specs": ""
+    },
+    {
+      "id": "friction-pack",
+      "name": "Пакет фрикционных дисков",
+      "cat": "transmission",
+      "types": [
+        "bulldozer",
+        "loader",
+        "dumptruck",
+        "grader"
+      ],
+      "asset": "brake-disc",
+      "desc": "Фрикционные элементы трансмиссии. Для запроса нужны модель агрегата, каталожный номер и состав комплекта.",
+      "published": true,
+      "example": true,
+      "order": 3,
+      "article": "",
+      "brand": "",
+      "stock": "unknown",
+      "quantity": null,
+      "price": null,
+      "specs": ""
+    },
+    {
+      "id": "starter",
+      "name": "Стартер",
+      "cat": "electric",
+      "types": [
+        "bulldozer",
+        "loader",
+        "dumptruck",
+        "grader"
+      ],
+      "asset": "starter",
+      "desc": "Компоненты системы запуска спецтехники. Укажите модель двигателя, напряжение и каталожный номер.",
+      "published": true,
+      "example": true,
+      "order": 4,
+      "article": "",
+      "brand": "",
+      "stock": "unknown",
+      "quantity": null,
+      "price": null,
+      "specs": ""
+    },
+    {
+      "id": "electrical-sensor",
+      "name": "Датчик электрической системы",
+      "cat": "electric",
+      "types": [
+        "bulldozer",
+        "loader",
+        "dumptruck",
+        "grader"
+      ],
+      "asset": "sensor",
+      "desc": "Датчики и элементы электрической системы. Подбор по назначению датчика, разъёму, модели машины и артикулу.",
+      "published": true,
+      "example": true,
+      "order": 5,
+      "article": "",
+      "brand": "",
+      "stock": "unknown",
+      "quantity": null,
+      "price": null,
+      "specs": ""
+    },
+    {
+      "id": "hyd-cylinder",
+      "name": "Гидроцилиндр",
+      "cat": "hydraulic",
+      "types": [
+        "bulldozer",
+        "loader",
+        "grader"
+      ],
+      "asset": "hydraulic",
+      "desc": "Гидроцилиндры рабочего оборудования. Для запроса подготовьте модель машины, назначение цилиндра, диаметр и ход.",
+      "published": true,
+      "example": true,
+      "order": 6,
+      "article": "",
+      "brand": "",
+      "stock": "unknown",
+      "quantity": null,
+      "price": null,
+      "specs": ""
+    },
+    {
+      "id": "hose",
+      "name": "Рукав высокого давления",
+      "cat": "hydraulic",
+      "types": [
+        "bulldozer",
+        "loader",
+        "dumptruck",
+        "grader"
+      ],
+      "asset": "hose",
+      "desc": "Рукава для гидравлических систем. Укажите длину, рабочее давление и тип присоединительной арматуры.",
+      "published": true,
+      "example": true,
+      "order": 7,
+      "article": "",
+      "brand": "",
+      "stock": "unknown",
+      "quantity": null,
+      "price": null,
+      "specs": ""
+    },
+    {
+      "id": "seal-kit",
+      "name": "Комплект уплотнений гидроцилиндра",
+      "cat": "hydraulic",
+      "types": [
+        "bulldozer",
+        "loader",
+        "dumptruck",
+        "grader"
+      ],
+      "asset": "seal",
+      "desc": "Уплотнения гидравлических узлов. Для подбора нужны модель цилиндра, размеры или каталожный номер комплекта.",
+      "published": true,
+      "example": true,
+      "order": 8,
+      "article": "",
+      "brand": "",
+      "stock": "unknown",
+      "quantity": null,
+      "price": null,
+      "specs": ""
+    },
+    {
+      "id": "fuel-injector",
+      "name": "Топливная форсунка",
+      "cat": "fuel",
+      "types": [
+        "bulldozer",
+        "loader",
+        "dumptruck",
+        "grader"
+      ],
+      "asset": "injector",
+      "desc": "Компоненты топливной системы ДВС. Для подбора укажите модель двигателя, серийный номер и номер форсунки.",
+      "published": true,
+      "example": true,
+      "order": 9,
+      "article": "",
+      "brand": "",
+      "stock": "unknown",
+      "quantity": null,
+      "price": null,
+      "specs": ""
+    },
+    {
+      "id": "fuel-pump",
+      "name": "Топливный насос",
+      "cat": "fuel",
+      "types": [
+        "bulldozer",
+        "loader",
+        "dumptruck",
+        "grader"
+      ],
+      "asset": "fuel-pump",
+      "desc": "Насосы топливной системы. Укажите модель двигателя, маркировку насоса и каталожный номер.",
+      "published": true,
+      "example": true,
+      "order": 10,
+      "article": "",
+      "brand": "",
+      "stock": "unknown",
+      "quantity": null,
+      "price": null,
+      "specs": ""
+    },
+    {
+      "id": "brake-disc",
+      "name": "Тормозной диск",
+      "cat": "brake",
+      "types": [
+        "loader",
+        "dumptruck",
+        "grader"
+      ],
+      "asset": "brake-disc",
+      "desc": "Детали тормозной системы спецтехники. Подбор по модели машины, узлу, размерам и артикулу.",
+      "published": true,
+      "example": true,
+      "order": 11,
+      "article": "",
+      "brand": "",
+      "stock": "unknown",
+      "quantity": null,
+      "price": null,
+      "specs": ""
+    },
+    {
+      "id": "brake-kit",
+      "name": "Ремкомплект тормозного узла",
+      "cat": "brake",
+      "types": [
+        "bulldozer",
+        "loader",
+        "dumptruck",
+        "grader"
+      ],
+      "asset": "seal",
+      "desc": "Комплектующие для обслуживания тормозных узлов. Укажите модель техники и состав требуемого комплекта.",
+      "published": true,
+      "example": true,
+      "order": 12,
+      "article": "",
+      "brand": "",
+      "stock": "unknown",
+      "quantity": null,
+      "price": null,
+      "specs": ""
+    },
+    {
+      "id": "radiator",
+      "name": "Радиатор системы охлаждения",
+      "cat": "cooling",
+      "types": [
+        "bulldozer",
+        "loader",
+        "dumptruck",
+        "grader"
+      ],
+      "asset": "radiator",
+      "desc": "Радиаторы системы охлаждения спецтехники. Для подбора нужны модель машины, размеры и каталожный номер.",
+      "published": true,
+      "example": true,
+      "order": 13,
+      "article": "",
+      "brand": "",
+      "stock": "unknown",
+      "quantity": null,
+      "price": null,
+      "specs": ""
+    },
+    {
+      "id": "water-pump",
+      "name": "Насос охлаждающей жидкости",
+      "cat": "cooling",
+      "types": [
+        "bulldozer",
+        "loader",
+        "dumptruck",
+        "grader"
+      ],
+      "asset": "fuel-pump",
+      "desc": "Насосы системы охлаждения ДВС. Укажите модель двигателя, серийный номер и артикул установленной детали.",
+      "published": true,
+      "example": true,
+      "order": 14,
+      "article": "",
+      "brand": "",
+      "stock": "unknown",
+      "quantity": null,
+      "price": null,
+      "specs": ""
+    },
+    {
+      "id": "oil-filter",
+      "name": "Масляный фильтр",
+      "cat": "filters",
+      "types": [
+        "bulldozer",
+        "loader",
+        "dumptruck",
+        "grader"
+      ],
+      "asset": "filter",
+      "desc": "Фильтры системы смазки ДВС. Для подбора укажите модель двигателя, артикул или размеры старого фильтра.",
+      "published": true,
+      "example": true,
+      "order": 15,
+      "article": "",
+      "brand": "",
+      "stock": "unknown",
+      "quantity": null,
+      "price": null,
+      "specs": ""
+    },
+    {
+      "id": "air-filter",
+      "name": "Воздушный фильтр",
+      "cat": "filters",
+      "types": [
+        "bulldozer",
+        "loader",
+        "dumptruck",
+        "grader"
+      ],
+      "asset": "air-filter",
+      "desc": "Фильтрующие элементы системы впуска. Подбор по номеру детали, двигателю или размерам элемента.",
+      "published": true,
+      "example": true,
+      "order": 16,
+      "article": "",
+      "brand": "",
+      "stock": "unknown",
+      "quantity": null,
+      "price": null,
+      "specs": ""
+    },
+    {
+      "id": "fuel-filter",
+      "name": "Топливный фильтр",
+      "cat": "filters",
+      "types": [
+        "bulldozer",
+        "loader",
+        "dumptruck",
+        "grader"
+      ],
+      "asset": "filter",
+      "desc": "Фильтры топливной системы. Требуется модель двигателя и номер установленного элемента.",
+      "published": true,
+      "example": true,
+      "order": 17,
+      "article": "",
+      "brand": "",
+      "stock": "unknown",
+      "quantity": null,
+      "price": null,
+      "specs": ""
+    },
+    {
+      "id": "engine-assembly",
+      "name": "Двигатель в сборе",
+      "cat": "assemblies",
+      "types": [
+        "bulldozer",
+        "loader",
+        "dumptruck",
+        "grader"
+      ],
+      "asset": "engine-assembly",
+      "desc": "Двигатели и комплектные агрегаты. Укажите модель техники, серийный номер двигателя и требуемую комплектацию.",
+      "published": true,
+      "example": true,
+      "order": 18,
+      "article": "",
+      "brand": "",
+      "stock": "unknown",
+      "quantity": null,
+      "price": null,
+      "specs": ""
+    },
+    {
+      "id": "transmission-assembly",
+      "name": "Трансмиссия в сборе",
+      "cat": "assemblies",
+      "types": [
+        "bulldozer",
+        "loader",
+        "dumptruck",
+        "grader"
+      ],
+      "asset": "gear",
+      "desc": "Узлы и агрегаты трансмиссии. Подбор по модели спецтехники, серийному номеру и обозначению агрегата.",
+      "published": true,
+      "example": true,
+      "order": 19,
+      "article": "",
+      "brand": "",
+      "stock": "unknown",
+      "quantity": null,
+      "price": null,
+      "specs": ""
+    },
+    {
+      "id": "final-drive",
+      "name": "Бортовой редуктор",
+      "cat": "assemblies",
+      "types": [
+        "bulldozer",
+        "loader"
+      ],
+      "asset": "gear",
+      "desc": "Комплектные приводные узлы спецтехники. Укажите модель машины, сторону установки и каталожный номер.",
+      "published": true,
+      "example": true,
+      "order": 20,
+      "article": "",
+      "brand": "",
+      "stock": "unknown",
+      "quantity": null,
+      "price": null,
+      "specs": ""
+    }
+  ],
+  "brands": [
+    {
+      "id": "ctp",
+      "name": "CTP",
+      "logo": "assets/brands/logos/ctp.png",
+      "published": true,
+      "order": 0,
+      "dark": false,
+      "description": ""
+    },
+    {
+      "id": "kmp",
+      "name": "KMP",
+      "logo": "assets/brands/logos/kmp.png",
+      "published": true,
+      "order": 1,
+      "dark": false,
+      "description": ""
+    },
+    {
+      "id": "cgr",
+      "name": "CGR",
+      "logo": "assets/brands/logos/cgr.svg",
+      "published": true,
+      "order": 2,
+      "dark": false,
+      "description": ""
+    },
+    {
+      "id": "itr",
+      "name": "ITR",
+      "logo": "assets/brands/logos/itr.png",
+      "published": true,
+      "order": 3,
+      "dark": false,
+      "description": ""
+    },
+    {
+      "id": "etp",
+      "name": "ETP",
+      "logo": "assets/brands/logos/etp.webp",
+      "published": true,
+      "order": 4,
+      "dark": false,
+      "description": ""
+    },
+    {
+      "id": "caterpillar",
+      "name": "CATERPILLAR",
+      "logo": "assets/brands/logos/caterpillar.svg",
+      "published": true,
+      "order": 5,
+      "dark": false,
+      "description": ""
+    },
+    {
+      "id": "komatsu",
+      "name": "KOMATSU",
+      "logo": "assets/brands/logos/komatsu.svg",
+      "published": true,
+      "order": 6,
+      "dark": true,
+      "description": ""
+    },
+    {
+      "id": "sudo-gasket",
+      "name": "SUDO GASKET",
+      "logo": "assets/brands/logos/sudo-gasket.jpg",
+      "published": true,
+      "order": 7,
+      "dark": false,
+      "description": ""
+    },
+    {
+      "id": "world-gasket",
+      "name": "WORLD GASKET",
+      "logo": "assets/brands/logos/world-gasket.png",
+      "published": true,
+      "order": 8,
+      "dark": false,
+      "description": ""
+    },
+    {
+      "id": "nok",
+      "name": "NOK",
+      "logo": "assets/brands/logos/nok.png",
+      "published": true,
+      "order": 9,
+      "dark": false,
+      "description": ""
+    },
+    {
+      "id": "hp",
+      "name": "HP",
+      "logo": "",
+      "published": true,
+      "order": 10,
+      "dark": false,
+      "description": ""
+    },
+    {
+      "id": "ofm",
+      "name": "OFM",
+      "logo": "assets/brands/logos/ofm.png",
+      "published": true,
+      "order": 11,
+      "dark": false,
+      "description": ""
+    },
+    {
+      "id": "timken",
+      "name": "TIMKEN",
+      "logo": "assets/brands/logos/timken.svg",
+      "published": true,
+      "order": 12,
+      "dark": false,
+      "description": ""
+    },
+    {
+      "id": "john-deere",
+      "name": "JOHN DEERE",
+      "logo": "assets/brands/logos/john-deere.svg",
+      "published": true,
+      "order": 13,
+      "dark": false,
+      "description": ""
+    },
+    {
+      "id": "perkins",
+      "name": "PERKINS",
+      "logo": "assets/brands/logos/perkins.svg",
+      "published": true,
+      "order": 14,
+      "dark": false,
+      "description": ""
+    },
+    {
+      "id": "cummins",
+      "name": "CUMMINS",
+      "logo": "assets/brands/logos/cummins.svg",
+      "published": true,
+      "order": 15,
+      "dark": false,
+      "description": ""
+    },
+    {
+      "id": "ntn",
+      "name": "NTN",
+      "logo": "assets/brands/logos/ntn.svg",
+      "published": true,
+      "order": 16,
+      "dark": true,
+      "description": ""
+    },
+    {
+      "id": "imachinery",
+      "name": "IMACHINERY",
+      "logo": "assets/brands/logos/imachinery.svg",
+      "published": true,
+      "order": 17,
+      "dark": false,
+      "description": ""
+    },
+    {
+      "id": "krauf",
+      "name": "KRAUF",
+      "logo": "assets/brands/logos/krauf.png",
+      "published": true,
+      "order": 18,
+      "dark": false,
+      "description": ""
+    },
+    {
+      "id": "ga-ricambi",
+      "name": "GA RICAMBI",
+      "logo": "assets/brands/logos/ga-ricambi.png",
+      "published": true,
+      "order": 19,
+      "dark": false,
+      "description": ""
+    },
+    {
+      "id": "sf",
+      "name": "SF",
+      "logo": "assets/brands/logos/sf.webp",
+      "published": true,
+      "order": 20,
+      "dark": false,
+      "description": ""
+    },
+    {
+      "id": "dzl",
+      "name": "DZL",
+      "logo": "",
+      "published": true,
+      "order": 21,
+      "dark": false,
+      "description": ""
+    },
+    {
+      "id": "agama",
+      "name": "AGAMA",
+      "logo": "assets/brands/logos/agama.png",
+      "published": true,
+      "order": 22,
+      "dark": false,
+      "description": ""
+    },
+    {
+      "id": "mcp",
+      "name": "MCP",
+      "logo": "assets/brands/mcp-logo.png",
+      "published": true,
+      "order": 23,
+      "dark": false,
+      "description": ""
+    },
+    {
+      "id": "euroricambi",
+      "name": "EURORICAMBI",
+      "logo": "assets/brands/euroricambi-logo.png",
+      "published": true,
+      "order": 24,
+      "dark": false,
+      "description": ""
+    },
+    {
+      "id": "maguro",
+      "name": "MAGURO",
+      "logo": "assets/brands/logos/maguro.jpg",
+      "published": true,
+      "order": 25,
+      "dark": false,
+      "description": ""
+    }
+  ]
+}

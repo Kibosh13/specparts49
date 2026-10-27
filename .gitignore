@@ -6,6 +6,9 @@
 *.pem
 *.key
 credentials*
+**/install-key.php
+**/.specparts49-cms/
+.cms-test/
 .openai/
 
 # Dependencies and caches
@@ -29,6 +32,7 @@ temp/
 coverage/
 test-results/
 playwright-report/
+tests/cms-last-result.json
 *.log
 *.tmp
 *.swp

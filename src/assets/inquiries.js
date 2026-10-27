@@ -21,10 +21,10 @@
   async function route(data, text) {
     if (hasEndpoint) {
       const response = await fetch(config.endpoint, { method: 'POST', credentials: 'omit', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
-      if (!response.ok) throw new Error('Не удалось отправить обращение. Попробуйте позже или сохраните текст.');
       const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Не удалось отправить обращение. Попробуйте позже или сохраните текст.');
       if (result.success !== true) throw new Error('Отправка не подтверждена. Попробуйте позже или сохраните текст.');
-      return 'Обращение отправлено компании.';
+      return 'Обращение принято компанией. Номер: ' + (result.id || 'уточняется');
     }
     if (hasEmail) {
       location.href = 'mailto:' + encodeURIComponent(config.email) + '?subject=' + encodeURIComponent('Спецпартс49 — ' + (data.topic || 'Подбор запчастей')) + '&body=' + encodeURIComponent(text);
@@ -67,7 +67,7 @@
   const sendRequest = document.getElementById('send-request-email');
   if (request && sendRequest) {
     sendRequest.disabled = !(hasEndpoint || hasEmail);
-    sendRequest.textContent = hasEndpoint ? 'Отправить на почту' : hasEmail ? 'Открыть письмо' : 'Отправить на почту';
+    sendRequest.textContent = hasEndpoint ? 'Отправить запрос' : hasEmail ? 'Открыть письмо' : 'Отправить на почту';
     sendRequest.addEventListener('click', async () => {
       const data = Object.fromEntries(new FormData(request));
       if (!data.name?.trim() || !data.email?.trim() || !data.consent) {

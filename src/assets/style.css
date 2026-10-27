@@ -31,3 +31,8 @@
 .brand-komatsu>img,.brand-ntn>img{background:var(--ink);padding:10px;border-radius:2px}.supplied-brands-page,.maker-section{scroll-margin-top:116px}
 
 @media(max-width:380px){.supplied-brand-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.brand-tile-name{font-size:9px}}
+
+/* Content blocks published by the custom CMS. */
+.cms-columns{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:center}.cms-columns img{width:100%;max-height:500px;object-fit:cover}.cms-banner{padding:40px;background:var(--ink);color:#fff;border-left:5px solid var(--yellow)}.cms-banner h2{margin-top:0}.cms-table{width:100%;border-collapse:collapse}.cms-table th,.cms-table td{padding:15px;border:1px solid var(--line);text-align:left}.cms-table th{background:var(--paper)}.cms-custom h2{font-size:32px;line-height:1.2}.cms-custom p{font-size:15px;line-height:1.8}.cms-product-price{font-size:17px;font-weight:800;margin:10px 0}.brand-dark img{background:#171b19;padding:10px;border-radius:2px}.cms-custom[hidden]{display:none!important}@media(max-width:700px){.cms-columns{grid-template-columns:1fr;gap:24px}.cms-custom h2{font-size:26px}.cms-banner{padding:25px}.cms-table th,.cms-table td{padding:10px}}
+
+.brand-tile-description{font-size:10px;line-height:1.5;color:var(--muted);text-align:center;margin:5px 0}.brand-tile:has(.brand-tile-description){height:auto;min-height:145px}

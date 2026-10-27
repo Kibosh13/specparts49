@@ -13,6 +13,7 @@ const output = path.join(root, mode === 'demo' ? '.demo' : 'dist');
 await rm(output, { recursive: true, force: true });
 await mkdir(output, { recursive: true });
 await cp(source, output, { recursive: true });
+if (mode === 'production') await cp(path.join(root, 'server/admin'), path.join(output, 'admin'), { recursive: true });
 const robots = mode === 'demo' ? 'noindex, nofollow, noarchive, nosnippet' : 'index, follow';
 let pages = 0;
 for (const entry of await readdir(output)) {
@@ -26,6 +27,6 @@ for (const entry of await readdir(output)) {
 }
 await writeFile(path.join(output, 'robots.txt'), mode === 'demo'
   ? 'User-agent: *\nDisallow: /\n'
-  : 'User-agent: *\nAllow: /\n');
+  : 'User-agent: *\nAllow: /\nDisallow: /admin/\n');
 await writeFile(path.join(output, '.nojekyll'), '');
 console.log(`${mode}: ${pages} HTML pages prepared in ${path.relative(root, output)}/; robots=${robots}`);
