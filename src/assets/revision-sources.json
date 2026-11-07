@@ -1,0 +1,24 @@
+{
+  "revision": "2026-11-07",
+  "hero": {
+    "source": "https://www.klettur.is/verkstaedi",
+    "asset": "assets/hero-cat-d10t.jpg",
+    "description": "Caterpillar D10T в работе. Не фотография склада Спецпартс49."
+  },
+  "office": {
+    "yandex": "https://yandex.ru/maps/org/spetsparts_49/149153850715/",
+    "coordinates": [
+      150.830909,
+      59.551879
+    ],
+    "twoGis": "https://2gis.ru/geo/150.830909,59.551879"
+  },
+  "messengers": {
+    "telegramFormat": "https://core.telegram.org/api/links#phone-number-links"
+  },
+  "excel": {
+    "library": "SheetJS CE 0.20.3",
+    "source": "https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js",
+    "license": "Apache-2.0"
+  }
+}

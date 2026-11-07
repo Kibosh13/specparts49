@@ -2,8 +2,8 @@
 declare(strict_types=1);
 // Runtime data is deliberately kept outside the directory served by nginx.
 if (!defined('SP49_ADMIN')) { http_response_code(404); exit; }
-const CMS_VERSION = '1.0.0';
-const CORE_PAGES = ['index.html','catalog.html','product.html','request.html','manufacturers.html','offers.html','about.html','delivery.html','contacts.html','privacy.html','sources.html'];
+const CMS_VERSION = '1.1.0';
+const CORE_PAGES = ['index.html','catalog.html','product.html','request.html','manufacturers.html','offers.html','about.html','delivery.html','contacts.html','privacy.html','sources.html','corporate.html'];
 function requirements(): array {
     $missing=[];if (PHP_VERSION_ID<80100) $missing[]='PHP 8.1 или новее';
     foreach (['DOMDocument'=>'DOM','finfo'=>'Fileinfo'] as $class=>$label) if (!class_exists($class)) $missing[]=$label;
@@ -107,7 +107,8 @@ function set_inner(DOMElement $node,string $html): void {
 }
 function sanitize_html(string $html): string {
     $d=html_doc($html);
-    foreach (xpath($d,'//iframe|//object|//embed|//base|//meta[translate(@http-equiv,"ABCDEFGHIJKLMNOPQRSTUVWXYZ","abcdefghijklmnopqrstuvwxyz")="refresh"]') as $n) $n->parentNode?->removeChild($n);
+    foreach (xpath($d,'//object|//embed|//base|//meta[translate(@http-equiv,"ABCDEFGHIJKLMNOPQRSTUVWXYZ","abcdefghijklmnopqrstuvwxyz")="refresh"]') as $n) $n->parentNode?->removeChild($n);
+    foreach (xpath($d,'//iframe') as $n) if (!preg_match('~^https://yandex\.ru/map-widget/v1/\?[a-zA-Z0-9%&=,._;+-]+$~',$n->getAttribute('src'))) $n->parentNode?->removeChild($n);
     foreach (xpath($d,'//script') as $n) {
         $src=$n->getAttribute('src');
         if (!preg_match('~^assets/(app|inquiries|contact-config|cms-data)\.js(?:\?[a-zA-Z0-9=.-]+)?$~',$src)) $n->parentNode?->removeChild($n);
@@ -138,8 +139,8 @@ function initial_content(): array {
     $common=[]; foreach (['topbar','header','cta-band','footer'] as $cls) { $n=xpath($d,'//*['.class_xpath($cls).']')[0]??null; $common[$cls]=$n?$d->saveHTML($n):''; }
     return ['revision'=>1,'publishedRevision'=>1,'updatedAt'=>now(),'publishedAt'=>now(),'pages'=>$pages,'common'=>$common,
         'products'=>$seed['products']??[],'categories'=>$seed['categories']??[],'brands'=>$seed['brands']??[],'offers'=>[],
-        'settings'=>['companyName'=>'Спецпартс49','slogan'=>'С нами ваша техника всегда в строю.','logo'=>'assets/specparts49-logo.png','favicon'=>'assets/favicon.svg','phone'=>'','email'=>'','warehouse'=>'Склад в г. Магадан','address'=>'г. Магадан, ул. Кольцевая, д. 3','hours'=>'','legalName'=>'ООО «СП49»','inn'=>'4900015825','ogrn'=>'1244900000201','accent'=>'#ffe500','ink'=>'#171918','paper'=>'#f5f5f1','font'=>'Manrope, Arial, sans-serif','siteUrl'=>'https://specparts49.ru','indexing'=>true,'inquiriesEnabled'=>false,'mailNotifications'=>false,'notificationEmail'=>''],
-        'navigation'=>[['title'=>'Каталог','url'=>'catalog.html'],['title'=>'Производители','url'=>'manufacturers.html'],['title'=>'Акции','url'=>'offers.html'],['title'=>'О компании','url'=>'about.html'],['title'=>'Поставка','url'=>'delivery.html'],['title'=>'Контакты','url'=>'contacts.html']], 'media'=>[]];
+        'settings'=>['companyName'=>'Спецпартс49','slogan'=>'С нами ваша техника всегда в строю.','logo'=>'assets/specparts49-logo.png','favicon'=>'assets/favicon.svg','phone'=>'+7 4132 224-224','mobile1'=>'+7 914 858-95-35','mobile2'=>'+7 929 454-80-20','email'=>'sales@specparts49.ru','warehouse'=>'г. Магадан, Марчеканский переулок, д. 25В','address'=>'685030, г. Магадан, ул. Кольцевая, д. 3','maxUrl'=>'','maxQr'=>'','companyCard'=>'','kpp'=>'','bankName'=>'','bankBik'=>'','bankAccount'=>'','bankCorr'=>'','hours'=>'','legalName'=>'ООО «СП49»','inn'=>'4900015825','ogrn'=>'1244900000201','accent'=>'#ffe500','ink'=>'#171918','paper'=>'#f5f5f1','font'=>'Manrope, Arial, sans-serif','siteUrl'=>'https://specparts49.ru','indexing'=>true,'inquiriesEnabled'=>false,'mailNotifications'=>false,'notificationEmail'=>'sales@specparts49.ru','clientConfirmations'=>false],
+        'navigation'=>[['title'=>'Каталог','url'=>'catalog.html'],['title'=>'Производители','url'=>'manufacturers.html'],['title'=>'Акции','url'=>'offers.html'],['title'=>'Снабженцам','url'=>'corporate.html'],['title'=>'Доставка','url'=>'delivery.html'],['title'=>'Контакты','url'=>'contacts.html']], 'media'=>[]];
 }
 function content(): array {
     $f=data_dir().'/content.json'; if (!is_file($f)) json_write($f,initial_content()); return json_read($f);
@@ -162,7 +163,7 @@ function entity_validate(string $collection,array $v,array $c): array {
     foreach (['image','logo'] as $key) if (isset($v[$key])) $v[$key]=safe_link($v[$key],true);
     foreach (['description','desc'] as $key) if (isset($v[$key])) $v[$key]=clean_text($v[$key],20000);
     if ($collection==='products') {
-        if (!in_array($v['cat']??'',array_column($c['categories'],'id'),true)) fail('Выберите существующую группу товаров.');
+        if (!in_array($v['cat']??'',array_merge(['unassigned'],array_column($c['categories'],'id')),true)) fail('Выберите существующую группу товаров.');
         $v['article']=clean_text($v['article']??'',150); $v['brand']=clean_text($v['brand']??'',100); $v['example']=(bool)($v['example']??false);
         $v['specs']=clean_text($v['specs']??'',10000);$v['seoTitle']=clean_text($v['seoTitle']??'',250);$v['seoDescription']=clean_text($v['seoDescription']??'',1000);
         $v['types']=array_values(array_intersect(array_filter((array)($v['types']??[]),'is_string'),['bulldozer','loader','dumptruck','grader']));
@@ -192,13 +193,13 @@ function category_grid(array $c): string {
     } return $html;
 }
 function product_status(array $p): string { return isset($p['quantity'])?($p['quantity']>0?'В наличии: '.$p['quantity'].' шт.':'Нет в наличии'):(['in_stock'=>'В наличии','on_order'=>'Под заказ','out_of_stock'=>'Нет в наличии'][$p['stock']??'']??'Наличие уточняется'); }
-function product_price(array $p): string { return isset($p['price'])?rtrim(rtrim(number_format((float)$p['price'],2,',',' '),'0'),',').' ₽':'По запросу'; }
+function product_price(array $p): string { return isset($p['price'])?rtrim(rtrim(number_format((float)$p['price'],2,',',' '),'0'),',').' ₽':'Уточнить стоимость'; }
 function product_image(array $p): string { return $p['image']??'assets/'.($p['asset']??'gear').'.svg'; }
 function product_url(array $p): string { return !empty($p['example'])?'product.html?id='.rawurlencode($p['id']):'part-'.$p['id'].'.html'; }
 function product_card_html(array $p,array $c): string {
     $cat='Запчасти';foreach ($c['categories'] as $v) if ($v['id']===$p['cat']) $cat=$v['name'];
     $kind=!empty($p['example'])?'ПРИМЕР ПОЗИЦИИ':($p['brand']??'');
-    return '<article class="product-card"><a class="product-art" href="'.h(product_url($p)).'" aria-label="'.h($p['name']).'">'.($kind?'<span class="product-kind">'.h($kind).'</span>':'').'<img src="'.h(product_image($p)).'" alt="'.h($p['name']).'" loading="lazy"></a><div class="product-info"><small>'.h($cat).'</small><a href="'.h(product_url($p)).'"><h3>'.h($p['name']).'</h3></a>'.(!empty($p['article'])?'<p class="offer-article">Артикул: '.h($p['article']).'</p>':'').(isset($p['price'])?'<p class="cms-product-price">'.h(product_price($p)).'</p>':'').'<div class="product-status">'.h(product_status($p)).'</div><button class="button small" data-add="'.h($p['id']).'">В запрос +</button></div></article>';
+    return '<article class="product-card"><a class="product-art" href="'.h(product_url($p)).'" aria-label="'.h($p['name']).'">'.($kind?'<span class="product-kind">'.h($kind).'</span>':'').'<img src="'.h(product_image($p)).'" alt="'.h($p['name']).'" loading="lazy"></a><div class="product-info"><small>'.h($cat).'</small><a href="'.h(product_url($p)).'"><h3>'.h($p['name']).'</h3></a>'.(!empty($p['article'])?'<p class="offer-article">Артикул: '.h($p['article']).'</p>':'').'<p class="cms-product-price">'.h(product_price($p)).'</p>'.'<div class="product-status">'.h(product_status($p)).'</div><button class="button small" data-add="'.h($p['id']).'">В запрос +</button></div></article>';
 }
 function product_page(array $p,array $c): array {
     $page=$c['pages']['product.html'];$page['file']='part-'.$p['id'].'.html';$page['title']=$p['seoTitle']?:$p['name'].' — '.$c['settings']['companyName'];$page['description']=$p['seoDescription']?:mb_substr($p['desc']??'',0,250);$page['image']=product_image($p);$page['noindex']=false;$page['archived']=false;
@@ -217,6 +218,23 @@ function bind_settings(DOMDocument $d,array $s,array $old=[]): void {
         foreach (['companyName','legalName','inn','ogrn','warehouse','address'] as $key) if (!empty($old[$key]) && $old[$key]!==$s[$key]) { $text->nodeValue=str_replace($old[$key],$s[$key],$text->nodeValue);if ($key==='companyName') $text->nodeValue=str_replace(mb_strtoupper($old[$key]),mb_strtoupper($s[$key]),$text->nodeValue); }
     }
 }
+function phone_links(array $s): string {
+    $out='';foreach(['phone','mobile1','mobile2'] as $key)if(!empty($s[$key]))$out.='<a href="tel:'.h(preg_replace('/[^+0-9]/','',$s[$key])).'">'.h($s[$key]).'</a>';return $out;
+}
+function messenger_links(array $s): string {
+    $out='';foreach(['mobile1','mobile2'] as $key)if(!empty($s[$key])){$number=preg_replace('/[^0-9]/','',$s[$key]);foreach(['whatsapp'=>'https://wa.me/','telegram'=>'https://t.me/+'] as $name=>$base)$out.='<a class="messenger '.$name.'" href="'.$base.h($number).'" target="_blank" rel="noopener">'.ucfirst($name).' · '.h($s[$key]).'</a>';}
+    if(!empty($s['maxUrl']))$out.='<a class="messenger max" href="'.h($s['maxUrl']).'" target="_blank" rel="noopener">MAX · '.h($s['mobile2']??'').'</a>';
+    if(!empty($s['maxUrl']) && !empty($s['maxQr']))$out.='<a href="'.h($s['maxUrl']).'" target="_blank" rel="noopener"><img class="max-qr" src="'.h($s['maxQr']).'" alt="QR-код профиля MAX" width="150" height="150"></a>';return $out;
+}
+function contact_lines(array $s): string {
+    $rows=[];if(phone_links($s))$rows[]=['Отдел продаж','<div class="contact-phones">'.phone_links($s).'</div>'];
+    if($s['email'])$rows[]=['Электронная почта','<h3><a href="mailto:'.h($s['email']).'">'.h($s['email']).'</a></h3>'];
+    foreach(['address'=>'Офис','warehouse'=>'Склад','hours'=>'Режим работы'] as $key=>$label)if(!empty($s[$key]))$rows[]=[$label,'<h3>'.h($s[$key]).'</h3>'];
+    $legal='<h3>'.h($s['legalName']).'</h3><p>ИНН '.h($s['inn']).' · ОГРН '.h($s['ogrn']).'</p>';
+    foreach(['kpp'=>'КПП','bankName'=>'Банк','bankBik'=>'БИК','bankAccount'=>'Расчётный счёт','bankCorr'=>'Корреспондентский счёт'] as $key=>$label)if(!empty($s[$key]))$legal.='<p>'.h($label).': '.h($s[$key]).'</p>';
+    $legal.=!empty($s['companyCard'])?'<a class="button outline small" href="'.h($s['companyCard']).'" download>Скачать карточку предприятия</a>':'<button class="button outline small" type="button" data-open-inquiry data-topic="Карточка предприятия">Запросить карточку предприятия</button>';
+    $rows[]=['Реквизиты',$legal];$out='';foreach($rows as [$label,$body])$out.='<div class="contact-line"'.($label==='Реквизиты'?' id="requisites"':'').'><div><small>'.h($label).'</small>'.$body.'</div></div>';return $out;
+}
 function render_page(array $page,array $c): string {
     $html=sanitize_html($page['html']); $d=html_doc($html); $s=$c['settings'];
     foreach ($c['common'] as $cls=>$fragment) {
@@ -229,12 +247,10 @@ function render_page(array $page,array $c): string {
     foreach (xpath($d,'//*['.class_xpath('supplied-brand-grid').']') as $node) set_inner($node,brand_grid($c));
     if ($page['file']==='index.html') foreach (xpath($d,'//*['.class_xpath('group-grid').']') as $node) set_inner($node,category_grid($c));
     if ($page['file']==='catalog.html' && $d->getElementById('product-grid')) { $cards='';foreach (ordered_published($c['products']) as $p) $cards.=product_card_html($p,$c);set_inner($d->getElementById('product-grid'),$cards); }
-    if ($page['file']==='contacts.html') {
-        $node=xpath($d,'//*['.class_xpath('contact-lines').']')[0]??null;
-        if ($node) {
-            $rows=[['Телефон отдела продаж',$s['phone']?:'Будет добавлен',$s['phone']?'tel:'.preg_replace('/[^+0-9]/','',$s['phone']):''],['Электронная почта',$s['email']?:'Будет добавлена',$s['email']?'mailto:'.$s['email']:''],['Юридический адрес',$s['address'],''],['Склад',$s['warehouse'],''],['Режим работы',$s['hours'],''],['Реквизиты',$s['legalName'].' · ИНН '.$s['inn'].' · ОГРН '.$s['ogrn'],'']];
-            $markup=''; foreach ($rows as [$label,$value,$url]) if ($value) $markup.='<div class="contact-line"><div><small>'.h($label).'</small><h3>'.($url?'<a href="'.h($url).'">'.h($value).'</a>':h($value)).'</h3></div></div>'; set_inner($node,$markup);
-        }
+    foreach(xpath($d,'//*[@data-company-contacts]') as $n) set_inner($n,phone_links($s).($s['email']?'<a href="mailto:'.h($s['email']).'">'.h($s['email']).'</a>':'').'<span>Офис: '.h($s['address']).'</span><span>Склад: '.h($s['warehouse']).'</span><a href="contacts.html#office-map">Как нас найти →</a>');
+    if($page['file']==='contacts.html'){
+        foreach(xpath($d,'//*['.class_xpath('contact-lines').']') as $n)set_inner($n,contact_lines($s));
+        foreach(xpath($d,'//*['.class_xpath('messenger-links').']') as $n)set_inner($n,messenger_links($s));
     }
     $head=$d->getElementsByTagName('head')->item(0); if (!$head) fail('У страницы отсутствует блок head.');
     foreach (xpath($d,'//link[starts-with(@href,"assets/style.css")]') as $style) $style->setAttribute('href','assets/style.css?v='.substr(hash_file('sha256',root_dir().'/assets/style.css'),0,12));
@@ -294,7 +310,7 @@ function valid_password(string $p): void { if (strlen($p)<12 || strlen($p)>200) 
 function password_digest(string $p): string { return password_hash($p,defined('PASSWORD_ARGON2ID')?PASSWORD_ARGON2ID:PASSWORD_DEFAULT); }
 function check_login_rate(string $email): void {
     $rows=json_read(data_dir().'/rate.json');$key=hash('sha256',strtolower($email).'|'.($_SERVER['REMOTE_ADDR']??''));
-    $recent=array_values(array_filter($rows[$key]??[],fn($t)=>$t>time()-900)); if (count($recent)>=6) fail('Слишком много попыток входа. Повторите через 15 минут.',429);
+    $recent=array_values(array_filter($rows[$key]??[],fn($t)=>$t>time()-900)); if (count($recent)>=6) fail($email==='inquiry'?'Вы уже отправили несколько запросов. Повторите через 15 минут или позвоните менеджеру.':'Слишком много попыток входа. Повторите через 15 минут.',429);
 }
 function login_attempt(string $email,bool $success): void {
     $rows=json_read(data_dir().'/rate.json');$key=hash('sha256',strtolower($email).'|'.($_SERVER['REMOTE_ADDR']??''));

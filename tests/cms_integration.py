@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Exercise the actual PHP HTTP endpoints in an isolated copy, never production."""
-import base64, concurrent.futures, hashlib, html, http.cookiejar, json, os, pathlib, secrets, shutil, socket, subprocess, tempfile, time, urllib.error, urllib.request
+import base64, concurrent.futures, email, email.policy, hashlib, html, http.cookiejar, json, os, pathlib, secrets, shutil, socket, subprocess, tempfile, time, urllib.error, urllib.request
 
 ROOT=pathlib.Path(__file__).resolve().parents[1]
 temp=pathlib.Path(tempfile.mkdtemp(prefix='sp49-cms-test-'))
@@ -9,7 +9,7 @@ private=temp/'private'
 sock=socket.socket();sock.bind(('127.0.0.1',0));port=sock.getsockname()[1];sock.close()
 origin=f'http://127.0.0.1:{port}'
 key=secrets.token_hex(32)
-env=os.environ.copy();env.update(SP49_TEST_DATA=str(private),SP49_TEST_KEY_HASH=hashlib.sha256(key.encode()).hexdigest())
+env=os.environ.copy();env.update(SP49_TEST_DATA=str(private),SP49_TEST_KEY_HASH=hashlib.sha256(key.encode()).hexdigest(),SP49_TEST_MAIL='1')
 log=open(temp/'php.log','w+')
 process=subprocess.Popen(['php','-S',f'127.0.0.1:{port}','-t',str(web)],env=env,stdout=log,stderr=log)
 PASS=secrets.token_urlsafe(24)
@@ -47,13 +47,14 @@ try:
     for attempt in range(100):
         try:urllib.request.urlopen(origin+'/admin/',timeout=1);break
         except Exception:time.sleep(.05)
+    entry=urllib.request.urlopen(origin+'/admin/').read().decode();assert 'vendor/xlsx.full.min.js' in entry and 'stock-import.js' in entry;ok('admin entry loads Excel parser and import helper')
     owner=Client();state=owner.request('status');assert not state['installed'] and state['setupReady'];ok('uninstalled state and CSRF token')
     owner.request('data',code=401);owner.request('setup',{'key':key},csrf=False,code=403);ok('authentication and CSRF boundaries')
     payload={'key':'bad','name':'Local Owner','email':'owner@example.invalid','password':PASS,'passwordRepeat':PASS}
     owner.request('setup',payload,code=403);payload['key']=key
     setup=owner.request('setup',payload);assert setup['user']['role']=='owner';owner.request('setup',payload,code=403);ok('one-time owner setup and replay rejection')
     cookies=list(owner.jar);assert cookies and cookies[0]._rest.get('HttpOnly') is None and cookies[0]._rest.get('SameSite')=='Strict';ok('HttpOnly and SameSite session cookies')
-    c=cdata(owner);assert len(c['products'])==21 and len(c['categories'])==9 and len(c['brands'])==26 and len(c['pages'])==11;ok('initial content migration')
+    c=cdata(owner);assert len(c['products'])==21 and len(c['categories'])==12 and len(c['brands'])==26 and len(c['pages'])==12;ok('initial content migration')
     prod={'id':'test-filter','name':'Фильтр <strong>проверка</strong>','article':'TST-001','brand':'MCP','cat':'filters','types':['bulldozer'],'stock':'in_stock','quantity':7,'price':1250.5,'image':'assets/filter.svg','desc':'Описание тестового товара','specs':'Размер: 100 мм\nМатериал: сталь','published':True,'example':False,'seoTitle':'Тестовый фильтр — каталог','seoDescription':'Проверка SEO товара'}
     old=c['revision'];c=owner.request('entitySave',{'revision':old,'collection':'products','item':prod})['content']
     owner.request('entitySave',{'revision':old,'collection':'products','item':prod},code=409);ok('product CRUD and optimistic concurrency')
@@ -83,12 +84,37 @@ try:
     csv='article;name;cat;price;quantity;published\nTST-001;Обновлённый фильтр;filters;2000;8;1\n'
     preview=owner.request('importProducts',{'revision':c['revision'],'csv':csv,'dryRun':True})['plan'];assert preview['update']==1 and not preview['errors']
     c=owner.request('importProducts',{'revision':c['revision'],'csv':csv,'dryRun':False})['content'];assert len([p for p in c['products'] if p.get('article')=='TST-001'])==1;ok('CSV preview and article-based update')
+    warehouse_csv='Артикул;Наименование;Цена\n001234;Кольцо;Уточнить стоимость\n1E123;Болт;По запросу\nTST-001;Фильтр;Уточнить стоимость\n'
+    plan=owner.request('importProducts',{'revision':c['revision'],'csv':warehouse_csv,'dryRun':True,'warehouseImport':True,'archiveExamples':True})['plan'];assert plan['create']==2 and plan['archiveExamples']==21 and not plan['errors']
+    assert plan['rows'][0]['item']['article']=='001234' and plan['rows'][0]['item']['cat']=='unassigned' and plan['rows'][0]['item']['price'] is None and plan['rows'][0]['item']['stock']=='in_stock'
+    c=owner.request('importProducts',{'revision':c['revision'],'csv':warehouse_csv,'warehouseImport':True,'archiveExamples':True})['content'];assert all(p.get('archived') for p in c['products'] if p.get('example'));updated_stock=next(p for p in c['products'] if p.get('article')=='TST-001');assert updated_stock['quantity'] is None and updated_stock['price'] is None;ok('warehouse import preserves articles, sets availability, hides examples and leaves prices on request')
+    cfg=owner.request('mailConfig')['config'];assert not cfg['passwordSet'];mail_secret=secrets.token_urlsafe(30)
+    mc=owner.request('mailConfigSave',{'config':dict(cfg,mode='mail',password=mail_secret,**{'from':'company@example.invalid'})})['config'];assert mc['passwordSet'] and 'password' not in mc and mail_secret not in json.dumps(owner.request('export'));ok('mail credentials stay private and are excluded from exports')
+    s=dict(c['settings']);s.update(mailNotifications=True,clientConfirmations=True,notificationEmail='company@example.invalid');c=owner.request('settingsSave',{'revision':c['revision'],'settings':s})['content'];owner.request('publish',{'revision':c['revision']})
+    boundary='----sp49-inquiry-test';fields={'name':'Attachment Test','email':'client@example.invalid','message':'Photo request','consent':'on','requestId':'test-inquiry-id-12345'}
+    raw=b''
+    for k,v in fields.items():raw+=(f'--{boundary}\r\nContent-Disposition: form-data; name="{k}"\r\n\r\n{v}\r\n').encode()
+    raw+=(f'--{boundary}\r\nContent-Disposition: form-data; name="attachments[]"; filename="photo.png"\r\nContent-Type: image/png\r\n\r\n').encode()+png+f'\r\n--{boundary}--\r\n'.encode()
+    response=urllib.request.urlopen(urllib.request.Request(origin+'/admin/inquiry.php',data=raw,headers={'Origin':origin,'Content-Type':'multipart/form-data; boundary='+boundary}));accepted_photo=json.loads(response.read());assert accepted_photo['success'] and accepted_photo['confirmation']
+    messages=owner.request('inquiries')['inquiries'];photo=messages[0];assert photo['notification']=='accepted' and photo['confirmation']=='accepted' and len(photo['attachments'])==1
+    attachment=photo['attachments'][0];assert owner.request('inquiryAttachment&id='+photo['id']+'&file='+attachment['file'])==png;ok('private attachments are downloadable only through authenticated inquiry access')
+    repeated=post_form(fields,200);assert repeated['id']==photo['id'] and len(owner.request('inquiries')['inquiries'])==len(messages);ok('idempotent inquiry retry does not send duplicate notifications')
+    outbox=[json.loads(f.read_text()) for f in (private/'test-mail').glob('*.json')];assert len(outbox)==2 and {m['to'] for m in outbox}=={'company@example.invalid','client@example.invalid'} and any(m['attachments'] for m in outbox);ok('manager notification includes attachment and customer receives a separate confirmation')
+    manager=next(m for m in outbox if m['to']=='company@example.invalid');parsed=email.message_from_string(manager['mime'],policy=email.policy.default);attached=list(parsed.iter_attachments());assert len(attached)==1 and attached[0].get_payload(decode=True)==png and attached[0].get_filename()=='photo.png';ok('MIME message preserves original attachment bytes and filename')
+    count=len(list((private/'inquiry-files').rglob('*')));badraw=raw.replace(b'photo.png',b'evil.php').replace(png,b'<?php echo 1; ?>').replace(b'test-inquiry-id-12345',b'test-inquiry-id-badfile')
+    try:urllib.request.urlopen(urllib.request.Request(origin+'/admin/inquiry.php',data=badraw,headers={'Origin':origin,'Content-Type':'multipart/form-data; boundary='+boundary}));assert False
+    except urllib.error.HTTPError as e:assert e.code==400
+    assert count==len(list((private/'inquiry-files').rglob('*')));ok('public upload rejects executable contents without storing files')
+
+    owner.request('inquiryAttachment&id=../../bad&file=evil',code=404)
+    test=owner.request('mailTest',{});assert test['delivery']=='accepted' and test['recipient']=='company@example.invalid';ok('mail test uses configured company recipient')
+    assert '<iframe' in (web/'contacts.html').read_text() and 'https://yandex.ru/map-widget/' in (web/'contacts.html').read_text();ok('trusted office map survives publication')
     published=(web/'index.html').read_bytes();history=owner.request('history')['history'];assert history
     c=owner.request('restore',{'revision':c['revision'],'id':history[0]['id']})['content'];assert (web/'index.html').read_bytes()==published;ok('restore to draft without changing live site')
     backup=owner.request('export');assert backup['format']=='sp49-cms-v1' and 'users' not in backup['content'] and PASS not in json.dumps(backup);ok('backup excludes credentials and customer inquiries')
     invalid=json.loads(json.dumps(backup));invalid['content']['pages']['index.html']['file']='../../owned.html';owner.request('restoreFile',{'revision':c['revision'],'backup':invalid},code=400);ok('backup import traversal rejection')
     owner.request('userSave',{'user':{'name':'Local Editor','email':'editor@example.invalid','role':'editor','active':True,'password':PASS}})
-    editor=Client();editor.request('status');editor.request('login',{'email':'editor@example.invalid','password':PASS});editor.request('users',code=403);editor.request('settingsSave',{'revision':c['revision'],'settings':s},code=403);editor.request('inquiries',code=403);ok('editor cannot manage access, settings or personal inquiries')
+    editor=Client();editor.request('status');editor.request('login',{'email':'editor@example.invalid','password':PASS});editor.request('users',code=403);editor.request('settingsSave',{'revision':c['revision'],'settings':s},code=403);editor.request('inquiries',code=403);editor.request('mailConfig',code=403);editor.request('inquiryAttachment&id='+photo['id']+'&file='+attachment['file'],code=403);ok('editor cannot manage access, settings or personal inquiries')
     ec=cdata(editor);prod['name']='Редактор изменил товар';prod['price']=1800;c=editor.request('entitySave',{'revision':ec['revision'],'collection':'products','item':prod})['content'];ok('editor can edit website content')
     editor.request('logout',{});editor.request('data',code=401);ok('logout invalidates access')
     owner.request('password',{'currentPassword':PASS,'password':PASS+'2','passwordRepeat':PASS+'2'});owner.request('logout',{});owner.request('login',{'email':'owner@example.invalid','password':PASS},code=401);owner.request('login',{'email':'owner@example.invalid','password':PASS+'2'});ok('password change and old credential rejection')

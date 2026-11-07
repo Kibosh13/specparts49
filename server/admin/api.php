@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 define('SP49_ADMIN',true);
-require __DIR__.'/lib.php';
+require __DIR__.'/lib.php';require __DIR__.'/mail.php';
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store, private');
 header('X-Robots-Tag: noindex, nofollow');
@@ -11,16 +11,18 @@ ini_set('display_errors','0');
 function respond(array $value,int $status=200): never { http_response_code($status); echo json_encode($value,JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES|JSON_THROW_ON_ERROR); exit; }
 function settings_validate(array $v,array $old): array {
     $s=$old;
-    foreach (['companyName'=>100,'slogan'=>300,'phone'=>80,'email'=>200,'warehouse'=>500,'address'=>1000,'hours'=>500,'legalName'=>250,'inn'=>20,'ogrn'=>30,'notificationEmail'=>200] as $key=>$max) if (array_key_exists($key,$v)) $s[$key]=clean_text($v[$key],$max);
+    foreach (['companyName'=>100,'slogan'=>300,'phone'=>80,'email'=>200,'warehouse'=>500,'address'=>1000,'hours'=>500,'legalName'=>250,'inn'=>20,'ogrn'=>30,'notificationEmail'=>200,'mobile1'=>80,'mobile2'=>80,'maxUrl'=>1000,'maxQr'=>1000,'companyCard'=>1000,'kpp'=>20,'bankName'=>250,'bankBik'=>20,'bankAccount'=>40,'bankCorr'=>40] as $key=>$max) if (array_key_exists($key,$v)) $s[$key]=clean_text($v[$key],$max);
     foreach (['email','notificationEmail'] as $key) if ($s[$key] && !filter_var($s[$key],FILTER_VALIDATE_EMAIL)) fail('Проверьте адрес электронной почты.');
     foreach (['accent','ink','paper'] as $key) if (isset($v[$key])) { if (!preg_match('/^#[0-9a-f]{6}$/i',$v[$key])) fail('Неверный формат цвета.'); $s[$key]=$v[$key]; }
     foreach (['logo','favicon'] as $key) if (isset($v[$key])) $s[$key]=safe_link($v[$key],true);
     if (isset($v['font'])) { if (!in_array($v['font'],['Manrope, Arial, sans-serif','Arial, sans-serif','Georgia, serif','system-ui, sans-serif'],true)) fail('Выберите шрифт из списка.');$s['font']=$v['font']; }
     if (isset($v['siteUrl'])) { $url=rtrim(clean_text($v['siteUrl'],300),'/'); if (!preg_match('~^https://[a-z0-9.-]+$~i',$url) && !(PHP_SAPI==='cli-server' && preg_match('~^http://(localhost|127\.0\.0\.1):\d+$~',$url))) fail('Укажите HTTPS-адрес основного сайта без пути.');$s['siteUrl']=$url; }
-    foreach (['indexing','inquiriesEnabled','mailNotifications'] as $key) if (isset($v[$key])) $s[$key]=(bool)$v[$key];
+    foreach (['indexing','inquiriesEnabled','mailNotifications','clientConfirmations'] as $key) if (isset($v[$key])) $s[$key]=(bool)$v[$key];
     if (!$s['companyName'] || !$s['legalName']) fail('Укажите название компании.');
     if ($s['inquiriesEnabled'] && !$s['email']) fail('Для приёма обращений укажите контактный email компании.');
     if ($s['mailNotifications'] && !$s['notificationEmail']) fail('Укажите email для уведомлений.');
+    foreach (['maxUrl','maxQr','companyCard'] as $key) if (!empty($s[$key])) $s[$key]=safe_link($s[$key],$key!=='maxUrl');
+    if (!empty($s['maxUrl']) && !preg_match('~^https://(?:max\.ru|www\.max\.ru)/[a-zA-Z0-9/_?=&%.-]+$~',$s['maxUrl'])) fail('Укажите ссылку на профиль MAX.');
     return $s;
 }
 function page_validate(array $p): array {
@@ -28,14 +30,14 @@ function page_validate(array $p): array {
     $title=clean_text($p['title']??'',250); if (!$title) fail('Укажите заголовок страницы для поиска.');
     return ['file'=>$file,'title'=>$title,'description'=>clean_text($p['description']??'',1000),'image'=>safe_link($p['image']??'assets/hero.jpg',true),'noindex'=>(bool)($p['noindex']??false),'archived'=>(bool)($p['archived']??false),'html'=>sanitize_html((string)($p['html']??''))];
 }
-function import_rows(string $csv,array $c): array {
+function import_rows(string $csv,array $c,array $options=[]): array {
     if (strlen($csv)>5*1024*1024) fail('CSV должен быть меньше 5 МБ.');
     $csv=preg_replace('/^\xEF\xBB\xBF/','',$csv);
     if (!mb_check_encoding($csv,'UTF-8')) $csv=mb_convert_encoding($csv,'UTF-8','Windows-1251');
     $line=strtok($csv,"\n");$delimiter=substr_count($line?:'',';')>=substr_count($line?:'',',')?';':',';
     $f=fopen('php://temp','r+');fwrite($f,$csv);rewind($f);$header=fgetcsv($f,0,$delimiter,'"','');
     if (!$header) fail('Пустой CSV-файл.');
-    $aliases=['артикул'=>'article','название'=>'name','бренд'=>'brand','категория'=>'cat','группа'=>'cat','цена'=>'price','остаток'=>'quantity','описание'=>'desc','статус'=>'stock','изображение'=>'image','опубликован'=>'published'];
+    $aliases=['артикул'=>'article','название'=>'name','наименование'=>'name','бренд'=>'brand','категория'=>'cat','группа'=>'cat','цена'=>'price','остаток'=>'quantity','описание'=>'desc','статус'=>'stock','изображение'=>'image','опубликован'=>'published'];
     $header=array_map(fn($v)=>$aliases[mb_strtolower(trim($v))]??mb_strtolower(trim($v)),$header);
     if (!in_array('name',$header,true) || !in_array('article',$header,true)) fail('В CSV нужны столбцы name и article (название и артикул).');
     $rows=[];$errors=[];$n=1;$used=[];
@@ -51,10 +53,11 @@ function import_rows(string $csv,array $c): array {
         }
         if (!$providedId && count($matches)>1) { $errors[]="Строка $n: несколько товаров с этим артикулом. Укажите id или бренд.";continue; }
         $existing=$existing??($matches[0]??null);
-        $v=$existing??['id'=>$providedId?:'item-'.substr(hash('sha256',$article.'|'.($row['brand']??'').'|'.$row['name']),0,16),'cat'=>$c['categories'][0]['id']??'engine','types'=>['bulldozer','loader','dumptruck','grader'],'stock'=>'unknown','example'=>false,'published'=>false,'asset'=>'gear'];
+        $v=$existing??['id'=>$providedId?:'item-'.substr(hash('sha256',$article.'|'.($row['brand']??'').'|'.$row['name']),0,16),'cat'=>'unassigned','types'=>[],'stock'=>'unknown','example'=>false,'published'=>false,'asset'=>'gear'];
         foreach (['name','article','brand','cat','desc','stock','image'] as $key) if (isset($row[$key]) && $row[$key]!=='') $v[$key]=$row[$key];
-        foreach (['price','quantity'] as $key) if (array_key_exists($key,$row)) $v[$key]=$row[$key]===''?null:str_replace(',','.',str_replace(' ','',$row[$key]));
+        foreach (['price','quantity'] as $key) if (array_key_exists($key,$row)) $v[$key]=$row[$key]==='' || ($key==='price' && preg_match('/по\s*запросу|уточнить\s*(стоимость|цену)/ui',$row[$key]))?null:str_replace(',','.',str_replace(' ','',$row[$key]));
         if (isset($row['published'])) $v['published']=in_array(mb_strtolower(trim($row['published'])),['1','true','да'],true);
+        if (!empty($options['warehouseImport'])) { $v['stock']='in_stock';$v['published']=true;$v['example']=false;if(!array_key_exists('price',$row))$v['price']=null;if(!array_key_exists('quantity',$row))$v['quantity']=null; }
         try { $v=entity_validate('products',$v,$c);if (isset($used[$v['id']])) fail('Артикул повторяется в файле.');$used[$v['id']]=true;$rows[]=['row'=>$n,'mode'=>$existing?'update':'create','item'=>$v]; }
         catch (CmsError $e) { $errors[]="Строка $n: ".$e->getMessage(); }
     }
@@ -62,7 +65,7 @@ function import_rows(string $csv,array $c): array {
 }
 try {
     start_session(); $action=(string)($_GET['action']??'status'); $method=$_SERVER['REQUEST_METHOD']??'GET';
-    $reads=['status','data','media','history','audit','users','inquiries','export','exportProducts'];
+    $reads=['status','data','media','history','audit','users','inquiries','export','exportProducts','mailConfig','inquiryAttachment'];
     if (!in_array($action,$reads,true) && $method!=='POST') fail('Используйте POST.',405);
     if ($method==='POST') {
         csrf_check();
@@ -121,6 +124,27 @@ try {
         if ($action==='inquiryStatus') {
             require_owner();$rows=json_read(data_dir().'/inquiries.json');foreach ($rows as &$r) if ($r['id']===($body['id']??'')) { if (!in_array($body['status']??'', ['new','working','done','archived'],true)) fail('Неверный статус.');$r['status']=$body['status'];$r['updatedAt']=now(); }unset($r);json_write(data_dir().'/inquiries.json',$rows);audit('inquiry_status',['id'=>$body['id']??'']);return ['saved'=>true];
         }
+        if($action==='mailConfig'){require_owner();return ['config'=>mail_config_public()];}
+        if($action==='mailConfigSave'){
+            require_owner();$next=mail_config();$v=$body['config']??[];
+            $next['mode']=($v['mode']??'mail')==='smtp'?'smtp':'mail';
+            $next['host']=strtolower(clean_text($v['host']??'',250));if($next['host'] && !preg_match('/^(?=.{1,250}$)[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?$/',$next['host']))fail('Проверьте SMTP-сервер.');
+            $next['security']=($v['security']??'starttls')==='ssl'?'ssl':'starttls';$next['port']=(int)($v['port']??587);if(!in_array($next['port'],[465,587,2525],true))fail('Разрешены SMTP-порты 465, 587 и 2525.');
+            $next['username']=clean_text($v['username']??'',250);$next['from']=clean_text($v['from']??'',200);if(!filter_var($next['from'],FILTER_VALIDATE_EMAIL) || preg_match('/[\r\n]/',$next['from']))fail('Укажите email отправителя.');
+            if(!empty($v['password'])){$pass=(string)$v['password'];if(strlen($pass)>500 || preg_match('/[\r\n]/',$pass))fail('Проверьте пароль SMTP.');$next['password']=$pass;}
+            json_write(data_dir().'/mail-config.json',$next);audit('mail_config_saved');return ['config'=>mail_config_public()];
+        }
+        if($action==='mailTest'){
+            require_owner();$settings=content()['settings'];$to=$settings['notificationEmail']?:$settings['email'];if(!filter_var($to,FILTER_VALIDATE_EMAIL))fail('Сначала сохраните email получателя в настройках.');
+            $test=send_company_mail($to,'Спецпартс49 — проверка отправки с сайта','Техническая проверка. Отправка почты с сайта настроена. Это письмо не является заявкой клиента.',$settings['email']);audit('mail_test',['status'=>$test['status']]);return ['delivery'=>$test['status'],'recipient'=>$to];
+        }
+        if($action==='inquiryAttachment'){
+            require_owner();$id=(string)($_GET['id']??'');$file=(string)($_GET['file']??'');$found=null;
+            foreach(json_read(data_dir().'/inquiries.json') as $row)if($row['id']===$id)foreach($row['attachments']??[] as $a)if($a['file']===$file)$found=$a;
+            if(!$found || !preg_match('/^[0-9]{8}-[a-f0-9]{12}$/',$id) || !preg_match('/^[a-f0-9]{24}\.(jpg|png|webp|pdf)$/',$file))fail('Файл не найден.',404);
+            $path=data_dir().'/inquiry-files/'.$id.'/'.$file;if(!is_file($path))fail('Файл не найден.',404);
+            header('Content-Type: '.$found['mime']);header('Content-Disposition: attachment; filename="attachment.'.pathinfo($file,PATHINFO_EXTENSION).'"; filename*=UTF-8\'\''.rawurlencode($found['name']));header('Content-Length: '.filesize($path));readfile($path);exit;
+        }
         $c=content();
         if ($action==='data') return ['content'=>$c,'user'=>$user];
         if ($action==='media') return ['media'=>media_list($c)];
@@ -151,8 +175,8 @@ try {
             foreach ($c[$key] as &$v) if ($v['id']===$id) $v['archived']=$archive;unset($v);$c=save_content($c,$key.'_archived');
         }
         elseif ($action==='importProducts') {
-            $plan=import_rows((string)($body['csv']??''),$c);if ($body['dryRun']??false) return ['plan'=>$plan];if ($plan['errors']) fail('Исправьте ошибки CSV перед импортом.');
-            $map=[];foreach ($c['products'] as $p) $map[$p['id']]=$p;foreach ($plan['rows'] as $row) $map[$row['item']['id']]=$row['item'];$c['products']=array_values($map);$c=save_content($c,'products_imported');
+            $plan=import_rows((string)($body['csv']??''),$c,$body);$plan['archiveExamples']=!empty($body['archiveExamples'])?count(array_filter($c['products'],fn($p)=>!empty($p['example']) && empty($p['archived']))):0;if ($body['dryRun']??false) return ['plan'=>$plan];if ($plan['errors']) fail('Исправьте ошибки CSV перед импортом.');
+            $map=[];foreach ($c['products'] as $p) $map[$p['id']]=$p;foreach ($plan['rows'] as $row) $map[$row['item']['id']]=$row['item'];if(!empty($body['archiveExamples']))foreach($map as &$item)if(!empty($item['example']))$item['archived']=true;unset($item);$c['products']=array_values($map);$c=save_content($c,'products_imported');
         }
         elseif ($action==='upload') {
             $f=$_FILES['file']??null;if (!$f || $f['error']!==UPLOAD_ERR_OK) fail('Файл не загружен. Проверьте размер и повторите.');if ($f['size']>20*1024*1024) fail('Максимальный размер файла — 20 МБ.');

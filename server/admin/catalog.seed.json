@@ -71,6 +71,30 @@
       "order": 8,
       "description": "Двигатели, трансмиссии и редукторы",
       "image": "assets/engine-assembly.svg"
+    },
+    {
+      "id": "hardware",
+      "name": "Метизы",
+      "description": "Болты, гайки, шайбы и крепёжные элементы",
+      "image": "assets/gear.svg",
+      "order": 10,
+      "published": true
+    },
+    {
+      "id": "seals-kits",
+      "name": "Ремкомплекты и уплотнения",
+      "description": "Для ДВС, КПП, гидротрансформаторов, гидроцилиндров и гидронасосов",
+      "image": "assets/seal.svg",
+      "order": 11,
+      "published": true
+    },
+    {
+      "id": "undercarriage",
+      "name": "Элементы ходовой",
+      "description": "Сегменты, крышки, бугеля, направляющие, каретки и картриджные пальцы",
+      "image": "assets/gear.svg",
+      "order": 12,
+      "published": true
     }
   ],
   "products": [

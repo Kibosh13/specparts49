@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 const root = path.resolve(process.argv[2] || '.demo');
 const mode = process.argv[3] || 'demo';
 const pages = (await readdir(root)).filter(p => p.endsWith('.html'));
-assert.equal(pages.length, 11, 'Expected all eleven pages');
+assert.equal(pages.length, 12, 'Expected all twelve pages');
 let assets = 0;
 for (const page of pages) {
   const html = await readFile(path.join(root, page), 'utf8');
