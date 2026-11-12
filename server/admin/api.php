@@ -48,8 +48,8 @@ function import_rows(string $csv,array $c,array $options=[]): array {
     $rows=[];$errors=[];$n=1;$used=[];
     while (($values=fgetcsv($f,0,$delimiter,'"',''))!==false) {
         $n++;
-        if (!array_filter($values,fn($v)=>trim($v)!=='')) continue;
-        if (count($rows)+count($errors)>=5000) fail('За один импорт можно загрузить до 5000 строк.');
+        if (!array_filter($values,fn($v)=>trim((string)$v)!=='')) continue;
+        if (count($rows)+count($errors)>=10000) fail('За один импорт можно загрузить до 10 000 строк.');
         if (count($values)!==count($header)) { $errors[]="Строка $n: число столбцов не совпадает с заголовком.";continue; }
         $row=array_combine($header,$values);foreach ($row as &$cell) if (str_starts_with($cell,"'") && preg_match('/^[=+@\-\t\r]/',substr($cell,1))) $cell=substr($cell,1);unset($cell);
         $article=trim($row['article']);$providedId=trim($row['id']??'');$brand=trim($row['brand']??'');

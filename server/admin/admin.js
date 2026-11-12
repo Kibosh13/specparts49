@@ -128,13 +128,23 @@ async function downloadExport(action){const r=await fetch('api.php?action='+acti
 function importOptions(){return {warehouseImport:$('#import-warehouse')?.checked!==false,archiveExamples:$('#import-examples')?.checked!==false};}
 function importProducts(){
  S.csv='';S.importPlan=null;
- modal('Импорт складского наличия из Excel',`<p class="muted">Обязательные столбцы: <strong>Артикул</strong> и <strong>Наименование</strong>. Цена без числа отображается как «Уточнить стоимость». Файлы Excel XLSX / XLS и CSV, до 5000 строк и 5 МБ. Существующие позиции обновляются по артикулу, новые добавляются без группы. Артикулы в Excel лучше задавать текстом — так сохранятся начальные нули.</p><div class="actions"><label class="btn">Выбрать Excel или CSV<input id="csv-file" type="file" accept=".xlsx,.xls,.csv" hidden></label>${btn('Скачать шаблон Excel','import-template')}</div><div style="margin-top:18px"><label class="check"><input type="checkbox" id="import-warehouse" checked><span>Позиции из файла в наличии; показывать на сайте</span></label><label class="check"><input type="checkbox" id="import-examples" checked><span>Убрать демонстрационные примеры в архив</span></label>${area('csv','Данные для проверки','','Можно также вставить CSV с колонками article;name.')}</div><div id="csv-result"></div>`,`${btn('Проверить файл','csv-check','','primary')}${btn('Импортировать в черновик','csv-apply','disabled','dark')}`);
- $('#csv-file').onchange=async e=>{
-  const f=e.target.files[0];if(!f)return;
-  try{const text=await window.SP49_readStockFile(f);
-   $('#f-csv').value=text;$('#csv-result').textContent='Файл прочитан: '+f.name+'. Нажмите «Проверить файл».';$('[data-action=csv-apply]').disabled=true;
-  }catch(error){toast(error.message,true);}
- };
+ modal('Импорт складского наличия из Excel',`<p class="muted">Обязательные столбцы: <strong>Артикул</strong> и <strong>Наименование</strong>. Цена без числа отображается как «Уточнить стоимость». Файлы Excel XLSX / XLS и CSV, до 10 000 строк и 5 МБ. Существующие позиции обновляются по артикулу, новые добавляются без группы. Артикулы в Excel лучше задавать текстом — так сохранятся начальные нули.</p><div class="actions"><label class="btn">Выбрать Excel или CSV<input id="csv-file" type="file" accept=".xlsx,.xls,.csv" hidden></label>${btn('Скачать шаблон Excel','import-template')}</div><div style="margin-top:18px"><label class="check"><input type="checkbox" id="import-headerless"><span>Excel без заголовков: артикул в A, наименование в B</span></label><label class="check"><input type="checkbox" id="import-warehouse" checked><span>Позиции из файла в наличии; показывать на сайте</span></label><label class="check"><input type="checkbox" id="import-examples" checked><span>Убрать демонстрационные примеры в архив</span></label>${area('csv','Данные для проверки','','Можно также вставить CSV с колонками article;name.')}</div><div id="csv-result"></div>`,`${btn('Проверить файл','csv-check','','primary')}${btn('Импортировать в черновик','csv-apply','disabled','dark')}`);
+ const fileInput=$('#csv-file'),headerless=$('#import-headerless');
+ let readVersion=0;
+ async function readStockFile(){
+  const f=fileInput.files[0];if(!f)return;
+  const version=++readVersion;
+  const csv=$('#f-csv'),result=$('#csv-result'),apply=$('[data-action=csv-apply]'),checkButton=$('[data-action=csv-check]');
+  csv.value='';result.textContent='Чтение файла…';apply.disabled=true;checkButton.disabled=true;
+  try{
+   const text=await window.SP49_readStockFile(f,{headerless:headerless.checked});
+   if(version!==readVersion)return;
+   csv.value=text;result.textContent='Файл прочитан: '+f.name+'. Нажмите «Проверить файл».';
+  }catch(error){if(version===readVersion){result.textContent=error.message;toast(error.message,true);}}
+  finally{if(version===readVersion)checkButton.disabled=false;}
+ }
+ fileInput.onchange=readStockFile;
+ headerless.onchange=readStockFile;
 }
 async function publishSite(){if(S.dirty){toast('Сначала сохраните открытую форму в черновик.',true);return;}const count=Object.values(S.c.pages).filter(p=>!p.archived).length;if(!await confirmBox('Опубликовать изменения?',`Будет опубликована версия <strong>№ ${S.c.revision}</strong>: ${count} страниц, каталог, бренды, акции и общие настройки. Посетители увидят обновлённый сайт.`,'Опубликовать'))return;try{const r=await api('publish',{revision:S.c.revision});toast('Сайт опубликован · версия '+r.publication.revision);S.dirty=false;await load();}catch(error){toast(error.message,true);}}
 async function handleAction(action,b){
