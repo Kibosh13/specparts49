@@ -83,6 +83,8 @@ try:
     assert 'Тестовый слоган' in home and 'Тестовый слоган' in about and 'Новый SEO-заголовок' in about
     assert 'canonical' in home and origin in home and 'index, follow' in home
     assert 'assets/app.js?v=' in home and 'assets/cms-data.js?v=cms-' in home
+    catalog=html.unescape((web/'catalog.html').read_text())
+    assert 'Пример каталога.' not in catalog and 'Стоимость и точное количество уточняйте при обращении.' in catalog
     assert 'Тестовый фильтр — каталог' in part and '1250' not in part and '1 250,5' in part and 'data-product-id="test-filter"' in part
     assert 'Фильтр &lt;strong&gt;' in (web/'part-test-filter.html').read_text().replace('&#1060;&#1080;&#1083;&#1100;&#1090;&#1088;','Фильтр') and PASS not in bundle and '"hash"' not in bundle and 'test-filter' in (web/'sitemap.xml').read_text();ok('published HTML, product SEO, escaped labels and sitemap')
     assert 'Disallow: /admin/' in (web/'robots.txt').read_text();ok('admin excluded from indexing')

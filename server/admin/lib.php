@@ -257,7 +257,7 @@ function render_page(array $page,array $c): string {
             foreach (xpath($d,'//*['.class_xpath('result-line').']/span') as $label) {
                 if (str_starts_with(trim($label->textContent),'Примеры')) $label->textContent='Склад в Магадане';
             }
-            foreach (xpath($d,'//*['.class_xpath('catalog-note').']') as $note) {
+            foreach (xpath($d,'//*['.class_xpath('catalog-note').'] | //*['.class_xpath('demo-note').']/span') as $note) {
                 if (str_starts_with(trim($note->textContent),'Пример каталога')) $note->textContent='Стоимость и точное количество уточняйте при обращении.';
             }
         }
