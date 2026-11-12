@@ -1,9 +1,14 @@
 <?php
 declare(strict_types=1);
-define('SP49_ADMIN',true);require __DIR__.'/lib.php';require __DIR__.'/mail.php';
+define('SP49_ADMIN',true);require __DIR__.'/lib.php';require __DIR__.'/mail.php';require __DIR__.'/inquiry-captcha.php';
 header('Content-Type: application/json; charset=utf-8');header('Cache-Control: no-store');header('X-Robots-Tag: noindex, nofollow');header('X-Content-Type-Options: nosniff');
 ini_set('display_errors','0');
 try {
+    if (($_SERVER['REQUEST_METHOD']??'')==='GET' && ($_GET['challenge']??'')==='1') {
+        if (($_SERVER['HTTP_SEC_FETCH_SITE']??'')==='cross-site') fail('Используйте форму обращения на сайте компании.',403);
+        echo json_encode(inquiry_captcha_challenge(), JSON_THROW_ON_ERROR);
+        exit;
+    }
     if(($_SERVER['REQUEST_METHOD']??'')!=='POST')fail('Используйте форму обращения.',405);
     $origin=$_SERVER['HTTP_ORIGIN']??'';$p=parse_url($origin);$originHost=($p['host']??'').(isset($p['port'])?':'.$p['port']:'');if(!$origin || !in_array($p['scheme']??'', ['http','https'],true) || strcasecmp($originHost,$_SERVER['HTTP_HOST']??'')!==0)fail('Отправьте обращение с сайта компании.',403);
     if((int)($_SERVER['CONTENT_LENGTH']??0)>17*1024*1024)fail('Общий размер запроса превышает 16 МБ.',413);
@@ -15,6 +20,7 @@ try {
         if(!$name || !filter_var($email,FILTER_VALIDATE_EMAIL) || preg_match('/[\r\n]/',$email) || mb_strlen($message)<3)fail('Укажите имя, корректный email и текст обращения.');
         $requestKey=clean_text($v['requestId']??'',80);$requestKey=preg_match('/^[a-zA-Z0-9-]{16,80}$/',$requestKey)?hash('sha256',$email.'|'.$requestKey):'';
         $rows=json_read(data_dir().'/inquiries.json');if($requestKey)foreach($rows as $old)if(($old['requestKey']??'')===$requestKey)return ['success'=>true,'id'=>$old['id'],'confirmation'=>($old['confirmation']??'disabled')==='accepted'];
+        $captchaNonce=inquiry_captcha_verify($v['captcha']??null,$rows);
         check_login_rate('inquiry');login_attempt('inquiry',false);
         $id=gmdate('Ymd').'-'.bin2hex(random_bytes(6));$attachments=[];$pending=[];$files=$_FILES['attachments']??null;$total=0;
         if($files){$names=(array)$files['name'];if(count($names)>3)fail('Можно прикрепить не более 3 файлов.');
@@ -29,7 +35,7 @@ try {
             try{foreach($pending as $a){if(!is_dir($folder))mkdir($folder,0700,true);$file=bin2hex(random_bytes(12)).'.'.$a['ext'];$path=$folder.'/'.$file;if(!move_uploaded_file($a['tmp'],$path))throw new RuntimeException('Cannot store attachment.');chmod($path,0600);$attachments[]=['file'=>$file,'name'=>$a['name'],'mime'=>$a['mime'],'bytes'=>$a['bytes'],'path'=>$path];}}
             catch(Throwable $e){foreach($attachments as $a)@unlink($a['path']);if(is_dir($folder))@rmdir($folder);throw $e;}
         }
-        $row=['id'=>$id,'at'=>now(),'status'=>'new','name'=>$name,'email'=>$email,'phone'=>clean_text($v['phone']??'',80),'topic'=>clean_text($v['topic']??'Подбор запчастей',200),'message'=>$message,'page'=>clean_text($v['page']??'',1000),'consent'=>true,'requestKey'=>$requestKey,'notification'=>'disabled','confirmation'=>'disabled','attachments'=>array_map(function($a){unset($a['path']);return $a;},$attachments)];
+        $row=['id'=>$id,'at'=>now(),'status'=>'new','name'=>$name,'email'=>$email,'phone'=>clean_text($v['phone']??'',80),'topic'=>clean_text($v['topic']??'Подбор запчастей',200),'message'=>$message,'page'=>clean_text($v['page']??'',1000),'consent'=>true,'requestKey'=>$requestKey,'captchaNonce'=>$captchaNonce,'notification'=>'disabled','confirmation'=>'disabled','attachments'=>array_map(function($a){unset($a['path']);return $a;},$attachments)];
         // Persist before attempting delivery: a mail outage must not lose a customer's request.
         $rows[]=$row;json_write(data_dir().'/inquiries.json',$rows);audit('inquiry_received',['id'=>$id,'attachments'=>count($attachments)]);
         $index=count($rows)-1;

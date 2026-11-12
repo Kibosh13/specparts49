@@ -37,6 +37,19 @@ class Client:
 
 def ok(name):checks.append(name)
 def cdata(c):return c.request('data')['content']
+def captcha_proof():
+    with urllib.request.urlopen(origin+'/admin/inquiry.php?challenge=1',timeout=5) as response:
+        assert response.headers['Cache-Control']=='no-store'
+        challenge=json.load(response)
+    params=challenge['parameters']
+    nonce=bytes.fromhex(params['nonce'])
+    salt=bytes.fromhex(params['salt'])
+    for counter in range(501):
+        key=hashlib.pbkdf2_hmac('sha256',nonce+counter.to_bytes(4,'big'),salt,params['cost'],dklen=params['keyLength']).hex()
+        if key.startswith(params['keyPrefix']):
+            return json.dumps({'challenge':challenge,'solution':{'counter':counter,'derivedKey':key}})
+    raise AssertionError('Issued CAPTCHA could not be solved')
+
 def post_form(body,expected):
     req=urllib.request.Request(origin+'/admin/inquiry.php',data=json.dumps(body).encode(),headers={'Content-Type':'application/json','Origin':origin})
     try:r=urllib.request.urlopen(req,timeout=15)
@@ -73,7 +86,14 @@ try:
     assert 'Тестовый фильтр — каталог' in part and '1250' not in part and '1 250,5' in part and 'data-product-id="test-filter"' in part
     assert 'Фильтр &lt;strong&gt;' in (web/'part-test-filter.html').read_text().replace('&#1060;&#1080;&#1083;&#1100;&#1090;&#1088;','Фильтр') and PASS not in bundle and '"hash"' not in bundle and 'test-filter' in (web/'sitemap.xml').read_text();ok('published HTML, product SEO, escaped labels and sitemap')
     assert 'Disallow: /admin/' in (web/'robots.txt').read_text();ok('admin excluded from indexing')
-    accepted=post_form({'name':'Test Customer','email':'customer@example.invalid','message':'Тестовое обращение','consent':True},200);assert accepted['id'];messages=owner.request('inquiries')['inquiries'];assert messages[0]['name']=='Test Customer';ok('private inquiry storage')
+    inquiry={'name':'Test Customer','email':'customer@example.invalid','message':'Тестовое обращение','consent':True}
+    assert 'Проверка от спама' in post_form(inquiry,403)['error']
+    proof=captcha_proof()
+    tampered=json.loads(proof);tampered['challenge']['parameters']['expiresAt']+=3600
+    post_form(dict(inquiry,captcha=json.dumps(tampered)),403)
+    accepted=post_form(dict(inquiry,captcha=proof),200);assert accepted['id'];messages=owner.request('inquiries')['inquiries'];assert messages[0]['name']=='Test Customer';ok('private inquiry storage')
+    post_form(dict(inquiry,captcha=proof,requestId='another-request-12345'),403);assert len(owner.request('inquiries')['inquiries'])==1
+    ok('CAPTCHA rejects missing, altered and replayed proofs')
     post_form({'name':'Test','email':'bad','message':'Text','consent':True},400);post_form({'name':'Test','email':'customer@example.invalid','message':'Text','consent':False},400);ok('public contact validation and consent')
     png=base64.b64decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Wl6bXwAAAAASUVORK5CYII=')
     r=owner.upload('sample.png',png,'image/png',c['revision']);c=r['content'];asset=r['uploaded']['path'];assert (web/asset).is_file()
@@ -91,7 +111,7 @@ try:
     cfg=owner.request('mailConfig')['config'];assert not cfg['passwordSet'];mail_secret=secrets.token_urlsafe(30)
     mc=owner.request('mailConfigSave',{'config':dict(cfg,mode='mail',password=mail_secret,**{'from':'company@example.invalid'})})['config'];assert mc['passwordSet'] and 'password' not in mc and mail_secret not in json.dumps(owner.request('export'));ok('mail credentials stay private and are excluded from exports')
     s=dict(c['settings']);s.update(mailNotifications=True,clientConfirmations=True,notificationEmail='company@example.invalid');c=owner.request('settingsSave',{'revision':c['revision'],'settings':s})['content'];owner.request('publish',{'revision':c['revision']})
-    boundary='----sp49-inquiry-test';fields={'name':'Attachment Test','email':'client@example.invalid','message':'Photo request','consent':'on','requestId':'test-inquiry-id-12345'}
+    boundary='----sp49-inquiry-test';fields={'name':'Attachment Test','email':'client@example.invalid','message':'Photo request','consent':'on','requestId':'test-inquiry-id-12345','captcha':captcha_proof()}
     raw=b''
     for k,v in fields.items():raw+=(f'--{boundary}\r\nContent-Disposition: form-data; name="{k}"\r\n\r\n{v}\r\n').encode()
     raw+=(f'--{boundary}\r\nContent-Disposition: form-data; name="attachments[]"; filename="photo.png"\r\nContent-Type: image/png\r\n\r\n').encode()+png+f'\r\n--{boundary}--\r\n'.encode()
@@ -101,7 +121,7 @@ try:
     repeated=post_form(fields,200);assert repeated['id']==photo['id'] and len(owner.request('inquiries')['inquiries'])==len(messages);ok('idempotent inquiry retry does not send duplicate notifications')
     outbox=[json.loads(f.read_text()) for f in (private/'test-mail').glob('*.json')];assert len(outbox)==2 and {m['to'] for m in outbox}=={'company@example.invalid','client@example.invalid'} and any(m['attachments'] for m in outbox);ok('manager notification includes attachment and customer receives a separate confirmation')
     manager=next(m for m in outbox if m['to']=='company@example.invalid');parsed=email.message_from_string(manager['mime'],policy=email.policy.default);attached=list(parsed.iter_attachments());assert len(attached)==1 and attached[0].get_payload(decode=True)==png and attached[0].get_filename()=='photo.png';ok('MIME message preserves original attachment bytes and filename')
-    count=len(list((private/'inquiry-files').rglob('*')));badraw=raw.replace(b'photo.png',b'evil.php').replace(png,b'<?php echo 1; ?>').replace(b'test-inquiry-id-12345',b'test-inquiry-id-badfile')
+    count=len(list((private/'inquiry-files').rglob('*')));badraw=raw.replace(b'photo.png',b'evil.php').replace(png,b'<?php echo 1; ?>').replace(b'test-inquiry-id-12345',b'test-inquiry-id-badfile').replace(fields['captcha'].encode(),captcha_proof().encode())
     try:urllib.request.urlopen(urllib.request.Request(origin+'/admin/inquiry.php',data=badraw,headers={'Origin':origin,'Content-Type':'multipart/form-data; boundary='+boundary}));assert False
     except urllib.error.HTTPError as e:assert e.code==400
     assert count==len(list((private/'inquiry-files').rglob('*')));ok('public upload rejects executable contents without storing files')

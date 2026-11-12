@@ -33,14 +33,40 @@
   function formData(form) {
     return Object.fromEntries([...new FormData(form)].filter(([, v]) => typeof v === 'string'));
   }
-  async function route(data, text, form) {
+  async function verifyCaptcha() {
+    const failure = 'Проверка от спама недоступна. Повторите отправку или сохраните текст обращения.';
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 12000);
+    try {
+      const url = new URL(config.endpoint, location.href);
+      url.searchParams.set('challenge', '1');
+      const [{ pbkdf2, solveChallenge }, response] = await Promise.all([
+        import('./altcha-3.6.0.js'),
+        fetch(url, { credentials: 'omit', cache: 'no-store', signal: controller.signal }),
+      ]);
+      if (!response.ok) throw new Error(failure);
+      const challenge = await response.json();
+      const solution = await solveChallenge({ challenge, deriveKey: pbkdf2.deriveKey, timeout: 20000 });
+      if (!solution) throw new Error(failure);
+      return JSON.stringify({ challenge, solution });
+    } catch {
+      throw new Error(failure);
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+  async function route(data, text, form, status) {
     if (hasEndpoint) {
       const files = validateFiles(form);
+      if (status) status.textContent = 'Проверка защиты от спама…';
+      const captcha = await verifyCaptcha();
       const payload = new FormData();
       for (const [key, value] of Object.entries(data)) if (typeof value === 'string' || typeof value === 'boolean') payload.set(key, String(value));
       if (!form.dataset.requestId) form.dataset.requestId = crypto.randomUUID();
       payload.set('requestId', form.dataset.requestId);
+      payload.set('captcha', captcha);
       for (const file of files) payload.append('attachments[]', file, file.name);
+      if (status) status.textContent = 'Отправляем обращение…';
       const response = await fetch(config.endpoint, { method: 'POST', credentials: 'omit', body: payload });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || 'Не удалось отправить обращение. Попробуйте позже или сохраните текст.');
@@ -72,7 +98,7 @@
       const status = form.querySelector('.inquiry-result');
       button.disabled = true;
       status.textContent = hasEndpoint ? 'Отправляем обращение…' : '';
-      try { status.textContent = await route(data, textFor(data), form); status.className='inquiry-result success'; }
+      try { status.textContent = await route(data, textFor(data), form, status); status.className='inquiry-result success'; }
       catch (error) { status.textContent = error.message || 'Не удалось отправить обращение.'; status.className='inquiry-result error'; }
       finally { button.disabled = false; }
     });
@@ -108,12 +134,13 @@
       const draft = window.SP49_buildRequestText?.();
       if (!draft) return;
       const body = draft.replace('Документ подготовлен на сайте и не отправлен компании.', 'Запрос подготовлен на сайте.');
+      const status = request.querySelector('.request-send-result');
       sendRequest.disabled = true;
       try {
-        const message = await route({ ...data, topic: 'Подбор запчастей', message: body, page: location.origin + location.pathname }, body, request);
-        const status = request.querySelector('.request-send-result');if(status){status.textContent=message;status.className='request-send-result inquiry-result success';}
+        const message = await route({ ...data, topic: 'Подбор запчастей', message: body, page: location.origin + location.pathname }, body, request, status);
+        if(status){status.textContent=message;status.className='request-send-result inquiry-result success';}
         if (typeof toast === 'function') toast(message);
-      } catch (error) { const status=request.querySelector('.request-send-result');if(status){status.textContent=error.message;status.className='request-send-result inquiry-result error';}if (typeof toast === 'function') toast(error.message); }
+      } catch (error) { if(status){status.textContent=error.message;status.className='request-send-result inquiry-result error';}if (typeof toast === 'function') toast(error.message); }
       finally { sendRequest.disabled = false; }
     });
     const params = new URLSearchParams(location.search);
