@@ -44,3 +44,6 @@
 .commercial-hero>.wrap{display:block;padding-top:0;padding-bottom:0}.commercial-hero .hero-content{width:54%;max-width:640px;padding:70px 0 62px}.commercial-hero .hero-photo{inset:0 0 0 42%;width:58%;object-position:left center;opacity:1}
 @media(max-width:900px){.commercial-hero .hero-content{width:100%;max-width:600px}.commercial-hero .hero-photo{inset:0;width:100%;object-position:22% center;opacity:.65}}
 @media(max-width:640px){.commercial-hero .hero-content{width:100%;max-width:none;padding:42px 0 43px}.commercial-hero h1{font-size:35px;max-width:100%}.commercial-hero .hero-photo{object-position:25% center}}
+
+.catalog-pagination:not([hidden]){display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:12px;margin-top:24px}
+.catalog-pagination button:disabled{opacity:.45;cursor:default}

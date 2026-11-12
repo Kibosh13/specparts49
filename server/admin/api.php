@@ -40,24 +40,28 @@ function import_rows(string $csv,array $c,array $options=[]): array {
     $aliases=['артикул'=>'article','название'=>'name','наименование'=>'name','бренд'=>'brand','категория'=>'cat','группа'=>'cat','цена'=>'price','остаток'=>'quantity','описание'=>'desc','статус'=>'stock','изображение'=>'image','опубликован'=>'published'];
     $header=array_map(fn($v)=>$aliases[mb_strtolower(trim($v))]??mb_strtolower(trim($v)),$header);
     if (!in_array('name',$header,true) || !in_array('article',$header,true)) fail('В CSV нужны столбцы name и article (название и артикул).');
+    $byId=[];$byArticle=[];
+    foreach ($c['products'] as $p) if (empty($p['archived'])) {
+        $byId[$p['id']]=$p;
+        if (($p['article']??'')!=='') $byArticle[$p['article']][]=$p;
+    }
     $rows=[];$errors=[];$n=1;$used=[];
     while (($values=fgetcsv($f,0,$delimiter,'"',''))!==false) {
-        $n++; if (count($rows)+count($errors)>5000) fail('За один импорт можно загрузить до 5000 строк.');
+        $n++;
         if (!array_filter($values,fn($v)=>trim($v)!=='')) continue;
+        if (count($rows)+count($errors)>=5000) fail('За один импорт можно загрузить до 5000 строк.');
         if (count($values)!==count($header)) { $errors[]="Строка $n: число столбцов не совпадает с заголовком.";continue; }
         $row=array_combine($header,$values);foreach ($row as &$cell) if (str_starts_with($cell,"'") && preg_match('/^[=+@\-\t\r]/',substr($cell,1))) $cell=substr($cell,1);unset($cell);
-        $article=trim($row['article']);$existing=null;$providedId=trim($row['id']??'');$matches=[];
-        foreach ($c['products'] as $p) if (!($p['archived']??false)) {
-            if ($providedId && $p['id']===$providedId) { $existing=$p;break; }
-            if (!$providedId && $article!=='' && ($p['article']??'')===$article && (empty($row['brand']) || ($p['brand']??'')===trim($row['brand']))) $matches[]=$p;
-        }
-        if (!$providedId && count($matches)>1) { $errors[]="Строка $n: несколько товаров с этим артикулом. Укажите id или бренд.";continue; }
-        $existing=$existing??($matches[0]??null);
+        $article=trim($row['article']);$providedId=trim($row['id']??'');$brand=trim($row['brand']??'');
+        $matches=$providedId!==''?[]:($byArticle[$article]??[]);
+        if ($brand!=='') $matches=array_values(array_filter($matches,fn($p)=>($p['brand']??'')===$brand));
+        if (count($matches)>1) { $errors[]="Строка $n: несколько товаров с этим артикулом. Укажите id или бренд.";continue; }
+        $existing=$providedId!==''?($byId[$providedId]??null):($matches[0]??null);
         $v=$existing??['id'=>$providedId?:'item-'.substr(hash('sha256',$article.'|'.($row['brand']??'').'|'.$row['name']),0,16),'cat'=>'unassigned','types'=>[],'stock'=>'unknown','example'=>false,'published'=>false,'asset'=>'gear'];
         foreach (['name','article','brand','cat','desc','stock','image'] as $key) if (isset($row[$key]) && $row[$key]!=='') $v[$key]=$row[$key];
         foreach (['price','quantity'] as $key) if (array_key_exists($key,$row)) $v[$key]=$row[$key]==='' || ($key==='price' && preg_match('/по\s*запросу|уточнить\s*(стоимость|цену)/ui',$row[$key]))?null:str_replace(',','.',str_replace(' ','',$row[$key]));
         if (isset($row['published'])) $v['published']=in_array(mb_strtolower(trim($row['published'])),['1','true','да'],true);
-        if (!empty($options['warehouseImport'])) { $v['stock']='in_stock';$v['published']=true;$v['example']=false;if(!array_key_exists('price',$row))$v['price']=null;if(!array_key_exists('quantity',$row))$v['quantity']=null; }
+        if (!empty($options['warehouseImport'])) { $v['stock']='in_stock';$v['published']=true;$v['example']=false;if(!$existing)$v['warehouseItem']=true;if(!array_key_exists('price',$row))$v['price']=null;if(!array_key_exists('quantity',$row))$v['quantity']=null; }
         try { $v=entity_validate('products',$v,$c);if (isset($used[$v['id']])) fail('Артикул повторяется в файле.');$used[$v['id']]=true;$rows[]=['row'=>$n,'mode'=>$existing?'update':'create','item'=>$v]; }
         catch (CmsError $e) { $errors[]="Строка $n: ".$e->getMessage(); }
     }

@@ -165,6 +165,7 @@ function entity_validate(string $collection,array $v,array $c): array {
     if ($collection==='products') {
         if (!in_array($v['cat']??'',array_merge(['unassigned'],array_column($c['categories'],'id')),true)) fail('Выберите существующую группу товаров.');
         $v['article']=clean_text($v['article']??'',150); $v['brand']=clean_text($v['brand']??'',100); $v['example']=(bool)($v['example']??false);
+        if (isset($v['warehouseItem'])) $v['warehouseItem']=(bool)$v['warehouseItem'];
         $v['specs']=clean_text($v['specs']??'',10000);$v['seoTitle']=clean_text($v['seoTitle']??'',250);$v['seoDescription']=clean_text($v['seoDescription']??'',1000);
         $v['types']=array_values(array_intersect(array_filter((array)($v['types']??[]),'is_string'),['bulldozer','loader','dumptruck','grader']));
         $v['stock']=in_array($v['stock']??'', ['unknown','in_stock','on_order','out_of_stock'],true)?$v['stock']:'unknown';
@@ -195,7 +196,8 @@ function category_grid(array $c): string {
 function product_status(array $p): string { return isset($p['quantity'])?($p['quantity']>0?'В наличии: '.$p['quantity'].' шт.':'Нет в наличии'):(['in_stock'=>'В наличии','on_order'=>'Под заказ','out_of_stock'=>'Нет в наличии'][$p['stock']??'']??'Наличие уточняется'); }
 function product_price(array $p): string { return isset($p['price'])?rtrim(rtrim(number_format((float)$p['price'],2,',',' '),'0'),',').' ₽':'Уточнить стоимость'; }
 function product_image(array $p): string { return $p['image']??'assets/'.($p['asset']??'gear').'.svg'; }
-function product_url(array $p): string { return !empty($p['example'])?'product.html?id='.rawurlencode($p['id']):'part-'.$p['id'].'.html'; }
+function has_product_page(array $p): bool { return empty($p['example']) && empty($p['warehouseItem']); }
+function product_url(array $p): string { return has_product_page($p)?'part-'.$p['id'].'.html':'product.html?id='.rawurlencode($p['id']); }
 function product_card_html(array $p,array $c): string {
     $cat='Запчасти';foreach ($c['categories'] as $v) if ($v['id']===$p['cat']) $cat=$v['name'];
     $kind=!empty($p['example'])?'ПРИМЕР ПОЗИЦИИ':($p['brand']??'');
@@ -246,7 +248,20 @@ function render_page(array $page,array $c): string {
     if ($nav) { $markup=''; foreach ($c['navigation'] as $v) if (($v['title']??'') && ($v['url']??'')) $markup.='<a href="'.h($v['url']).'" class="'.(explode('?',$v['url'])[0]===$page['file']?'active':'').'">'.h($v['title']).'</a>'; set_inner($nav,$markup); }
     foreach (xpath($d,'//*['.class_xpath('supplied-brand-grid').']') as $node) set_inner($node,brand_grid($c));
     if ($page['file']==='index.html') foreach (xpath($d,'//*['.class_xpath('group-grid').']') as $node) set_inner($node,category_grid($c));
-    if ($page['file']==='catalog.html' && $d->getElementById('product-grid')) { $cards='';foreach (ordered_published($c['products']) as $p) $cards.=product_card_html($p,$c);set_inner($d->getElementById('product-grid'),$cards); }
+    if ($page['file']==='catalog.html' && ($grid=$d->getElementById('product-grid'))) {
+        $products=ordered_published($c['products']);$cards='';
+        foreach (array_slice($products,0,48) as $p) $cards.=product_card_html($p,$c);
+        set_inner($grid,$cards);
+        if ($count=$d->getElementById('result-count')) $count->textContent='Найдено позиций: '.count($products);
+        if (array_filter($products,fn($p)=>empty($p['example']))) {
+            foreach (xpath($d,'//*['.class_xpath('result-line').']/span') as $label) {
+                if (str_starts_with(trim($label->textContent),'Примеры')) $label->textContent='Склад в Магадане';
+            }
+            foreach (xpath($d,'//*['.class_xpath('catalog-note').']') as $note) {
+                if (str_starts_with(trim($note->textContent),'Пример каталога')) $note->textContent='Стоимость и точное количество уточняйте при обращении.';
+            }
+        }
+    }
     foreach(xpath($d,'//*[@data-company-contacts]') as $n) set_inner($n,phone_links($s).($s['email']?'<a href="mailto:'.h($s['email']).'">'.h($s['email']).'</a>':'').'<span>Офис: '.h($s['address']).'</span><span>Склад: '.h($s['warehouse']).'</span><a href="contacts.html#office-map">Как нас найти →</a>');
     if($page['file']==='contacts.html'){
         foreach(xpath($d,'//*['.class_xpath('contact-lines').']') as $n)set_inner($n,contact_lines($s));
@@ -278,8 +293,8 @@ function public_bundle(array $c): string {
 function publish(array &$c): array {
     $s=$c['settings'];$plan=[];
     foreach ($c['pages'] as $file=>$page) $plan[page_file($file)]=render_page($page,$c);
-    $actual=[];foreach (ordered_published($c['products']) as $p) if (empty($p['example'])) { $page=product_page($p,$c);$plan[$page['file']]=render_page($page,$c);$actual[$p['id']]=true; }
-    $previous=json_read(data_dir().'/published.json');foreach ($previous['products']??[] as $p) if (empty($p['example']) && !isset($actual[$p['id']])) { $page=product_page($p,$c);$page['archived']=true;$page['noindex']=true;$plan[$page['file']]=render_page($page,$c); }
+    $actual=[];foreach (ordered_published($c['products']) as $p) if (has_product_page($p)) { $page=product_page($p,$c);$plan[$page['file']]=render_page($page,$c);$actual[$p['id']]=true; }
+    $previous=json_read(data_dir().'/published.json');foreach ($previous['products']??[] as $p) if (has_product_page($p) && !isset($actual[$p['id']])) { $page=product_page($p,$c);$page['archived']=true;$page['noindex']=true;$plan[$page['file']]=render_page($page,$c); }
     $plan['assets/cms-data.js']=public_bundle($c);
     $plan['assets/cms-theme.css']=':root{--yellow:'.$s['accent'].';--ink:'.$s['ink'].';--paper:'.$s['paper'].'}body{font-family:'.$s['font'].'}';
     $plan['robots.txt']='User-agent: *'."\n".($s['indexing']?'Allow: /':'Disallow: /')."\nDisallow: /admin/\nSitemap: ".rtrim($s['siteUrl'],'/')."/sitemap.xml\n";

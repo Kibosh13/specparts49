@@ -37,24 +37,66 @@ document.addEventListener('click',e=>{const b=e.target.closest('[data-add]');if(
 document.querySelector('.menu-toggle')?.addEventListener('click',function(){const open=document.querySelector('.nav').classList.toggle('open');this.setAttribute('aria-expanded',String(open));this.innerHTML=svg(open?'close':'list');});
 const dialog=document.getElementById('search-dialog');document.getElementById('open-search')?.addEventListener('click',()=>{dialog.showModal();dialog.querySelector('input').focus();});document.getElementById('close-search')?.addEventListener('click',()=>dialog.close());dialog?.addEventListener('click',e=>{if(e.target===dialog)dialog.close();});
 const productImage=p=>p.image||`assets/${p.asset||'gear'}.svg`;
-const productUrl=p=>p.example?'product.html?id='+encodeURIComponent(p.id):'part-'+p.id+'.html';
+const productUrl=p=>p.example||p.warehouseItem?'product.html?id='+encodeURIComponent(p.id):'part-'+p.id+'.html';
 function stockText(p){return p.quantity!=null?(p.quantity>0?'В наличии: '+p.quantity+' шт.':'Нет в наличии'):({in_stock:'В наличии',on_order:'Под заказ',out_of_stock:'Нет в наличии'}[p.stock]||'Наличие уточняется');}
 function priceText(p){return p.price!=null?Number(p.price).toLocaleString('ru-RU',{maximumFractionDigits:2})+' ₽':'Уточнить стоимость';}
 function productCard(p){return '<article class="product-card"><a href="'+esc(productUrl(p))+'" class="product-art" aria-label="'+esc(p.name)+'">'+(p.example?'<span class="product-kind">ПРИМЕР ПОЗИЦИИ</span>':p.brand?'<span class="product-kind">'+esc(p.brand)+'</span>':'')+'<img src="'+esc(productImage(p))+'" alt="'+esc(p.name)+'" loading="lazy"></a><div class="product-info"><small>'+esc(categories.find(c=>c.id===p.cat)?.name||'Запчасти')+'</small><a href="'+esc(productUrl(p))+'"><h3>'+esc(p.name)+'</h3></a>'+(p.article?'<p class="offer-article">Артикул: '+esc(p.article)+'</p>':'')+'<p class="cms-product-price">'+esc(priceText(p))+'</p>'+'<div class="product-status">'+esc(stockText(p))+'</div><button class="button small" data-add="'+esc(p.id)+'">В запрос '+svg('plus')+'</button></div></article>';}
 
-if(document.getElementById('product-grid')){
+const grid=document.getElementById('product-grid');
+if(grid){
  const params=new URLSearchParams(location.search);let category=categories.some(c=>c.id===params.get('category'))?params.get('category'):'all';const input=document.getElementById('catalog-search'),type=document.getElementById('type-filter'),sort=document.getElementById('sort-filter');input.value=params.get('q')||'';type.value=Object.hasOwn(typeNames,params.get('type'))?params.get('type'):'all';
+ sort.value=params.get('sort')==='name'?'name':'default';
+ const pageSize=48;
+ const count=document.getElementById('result-count');
+ count.tabIndex=-1;
+ const categoryNames=new Map(categories.map(c=>[c.id,c.name]));
+ const searchText=products.map(p=>[p.name,p.article,p.brand,p.desc,categoryNames.get(p.cat)||'Запчасти'].join(' ').toLowerCase());
+ const pager=document.createElement('nav');
+ pager.className='catalog-pagination';
+ pager.setAttribute('aria-label','Страницы каталога');
+ pager.innerHTML='<button class="button outline small" type="button">Назад</button><span></span><button class="button outline small" type="button">Далее</button>';
+ grid.after(pager);
+ const [previous,pageLabel,next]=pager.children;
+ let matches=[],page=Math.max(1,Number.parseInt(params.get('page'),10)||1);
  document.getElementById('filter-tabs').innerHTML=categories.map(c=>`<button data-category="${c.id}" class="${c.id===category?'active':''}" aria-pressed="${c.id===category}">${esc(c.name)}<span>${c.id==='all'?products.length:products.filter(p=>p.cat===c.id).length}</span></button>`).join('');
- function render(){let list=products.filter(p=>(category==='all'||p.cat===category)&&(type.value==='all'||(p.types||[]).includes(type.value))&&(p.name+' '+(p.article||'')+' '+(p.brand||'')+' '+p.desc+' '+(categories.find(c=>c.id===p.cat)?.name||"\u0417\u0430\u043f\u0447\u0430\u0441\u0442\u0438")).toLowerCase().includes(input.value.trim().toLowerCase()));if(sort.value==='name')list.sort((a,b)=>a.name.localeCompare(b.name,'ru'));document.getElementById('result-count').textContent=`Найдено позиций: ${list.length}`;document.getElementById('product-grid').innerHTML=list.length?list.map(productCard).join(''):`<div class="empty"><h3>Ничего не найдено</h3><p>Попробуйте другое название или сбросьте фильтры.</p><button class="button small" id="clear-search">Сбросить фильтры ${svg('arrow')}</button></div>`;document.getElementById('clear-search')?.addEventListener('click',()=>{category='all';input.value='';type.value='all';setTabs();render();});updateCounts();const url=new URL(location.href);category==='all'?url.searchParams.delete('category'):url.searchParams.set('category',category);input.value?url.searchParams.set('q',input.value):url.searchParams.delete('q');type.value==='all'?url.searchParams.delete('type'):url.searchParams.set('type',type.value);history.replaceState(null,'',url);}
+ function renderPage(){
+  const pageCount=Math.max(1,Math.ceil(matches.length/pageSize));
+  page=Math.min(page,pageCount);
+  count.textContent=`Найдено позиций: ${matches.length}`;
+  grid.innerHTML=matches.length?matches.slice((page-1)*pageSize,page*pageSize).map(productCard).join(''):`<div class="empty"><h3>Ничего не найдено</h3><p>Попробуйте другое название или сбросьте фильтры.</p><button class="button small" id="clear-search">Сбросить фильтры ${svg('arrow')}</button></div>`;
+  document.getElementById('clear-search')?.addEventListener('click',()=>{category='all';input.value='';type.value='all';setTabs();reset();});
+  pager.hidden=pageCount===1;
+  previous.disabled=page===1;
+  next.disabled=page===pageCount;
+  pageLabel.textContent=`Страница ${page} из ${pageCount}`;
+  updateCounts();
+  const url=new URL(location.href);
+  for(const [key,value] of Object.entries({category:category==='all'?'':category,q:input.value,type:type.value==='all'?'':type.value,sort:sort.value==='name'?'name':'',page:page>1?String(page):''})){
+   if(value)url.searchParams.set(key,value);
+   else url.searchParams.delete(key);
+  }
+  history.replaceState(null,'',url);
+ }
+ function render(){
+  const query=input.value.trim().toLowerCase();
+  matches=products.filter((p,i)=>(category==='all'||p.cat===category)&&(type.value==='all'||(p.types||[]).includes(type.value))&&searchText[i].includes(query));
+  if(sort.value==='name')matches.sort((a,b)=>a.name.localeCompare(b.name,'ru'));
+  renderPage();
+ }
+ function reset(){page=1;render();}
+ function changePage(step){page+=step;renderPage();count.focus({preventScroll:true});count.scrollIntoView({block:'center'});}
  function setTabs(){document.querySelectorAll('[data-category]').forEach(b=>{const active=b.dataset.category===category;b.classList.toggle('active',active);b.setAttribute('aria-pressed',String(active));});}
- document.getElementById('filter-tabs').addEventListener('click',e=>{const b=e.target.closest('[data-category]');if(!b)return;category=b.dataset.category;setTabs();render();});input.addEventListener('input',render);type.addEventListener('change',render);sort.addEventListener('change',render);render();
+ document.getElementById('filter-tabs').addEventListener('click',e=>{const b=e.target.closest('[data-category]');if(!b)return;category=b.dataset.category;setTabs();reset();});
+ input.addEventListener('input',reset);type.addEventListener('change',reset);sort.addEventListener('change',reset);
+ previous.addEventListener('click',()=>changePage(-1));next.addEventListener('click',()=>changePage(1));
+ render();
 }
 if(document.getElementById('product-detail')){
  const p=products.find(p=>p.id===(new URLSearchParams(location.search).get('id')||document.body.dataset.productId));
  if(!p){document.getElementById('product-detail').innerHTML='<div class="empty"><h1>Позиция не найдена</h1><p>Откройте каталог и выберите нужную деталь.</p><a class="button" href="catalog.html">Перейти в каталог</a></div>';}else{
  document.title=p.name+' — Спецпартс49';document.getElementById('product-crumb').textContent=p.name;
  const specs=(p.specs||'').split('\n').filter(Boolean).map(line=>{const i=line.indexOf(':');return '<div><dt>'+esc(i>=0?line.slice(0,i):'Характеристика')+'</dt><dd>'+esc(i>=0?line.slice(i+1):line)+'</dd></div>';}).join('');
- document.getElementById('product-detail').innerHTML='<div class="detail-art"><img src="'+esc(productImage(p))+'" alt="'+esc(p.name)+'"></div><div class="detail-copy"><span class="tag">'+esc(categories.find(c=>c.id===p.cat)?.name||'Запчасти')+'</span><h1>'+esc(p.name)+'</h1><p>'+esc(p.desc)+'</p><dl><div><dt>Тип техники</dt><dd>'+esc((p.types||[]).map(t=>typeNames[t]||t).join(', ')||'Уточняется')+'</dd></div>'+(p.brand?'<div><dt>Бренд запчасти</dt><dd>'+esc(p.brand)+'</dd></div>':'')+'<div><dt>Артикул</dt><dd>'+esc(p.article||'Указывается при подборе')+'</dd></div><div><dt>Стоимость</dt><dd>'+esc(priceText(p))+'</dd></div><div><dt>Совместимость</dt><dd>По модели и серийному номеру</dd></div>'+specs+'</dl><div class="product-status">'+esc(stockText(p))+'</div><button class="button" data-add="'+esc(p.id)+'">В запрос '+svg('plus')+'</button>'+(p.example?'<p class="notice">Это пример позиции для знакомства с каталогом. Совместимость, ассортимент и остатки требуют подтверждения.</p>':'<p class="notice">Совместимость с вашей техникой и актуальные условия поставки уточняйте при обращении.</p>')+'</div>';
+ document.getElementById('product-detail').innerHTML='<div class="detail-art"><img src="'+esc(productImage(p))+'" alt="'+esc(p.name)+'"></div><div class="detail-copy"><span class="tag">'+esc(categories.find(c=>c.id===p.cat)?.name||'Запчасти')+'</span><h1>'+esc(p.name)+'</h1>'+(p.desc?'<p>'+esc(p.desc)+'</p>':'')+'<dl><div><dt>Тип техники</dt><dd>'+esc((p.types||[]).map(t=>typeNames[t]||t).join(', ')||'Уточняется')+'</dd></div>'+(p.brand?'<div><dt>Бренд запчасти</dt><dd>'+esc(p.brand)+'</dd></div>':'')+'<div><dt>Артикул</dt><dd>'+esc(p.article||'Указывается при подборе')+'</dd></div><div><dt>Стоимость</dt><dd>'+esc(priceText(p))+'</dd></div><div><dt>Совместимость</dt><dd>По модели и серийному номеру</dd></div>'+specs+'</dl><div class="product-status">'+esc(stockText(p))+'</div><button class="button" data-add="'+esc(p.id)+'">В запрос '+svg('plus')+'</button>'+(p.example?'<p class="notice">Это пример позиции для знакомства с каталогом. Совместимость, ассортимент и остатки требуют подтверждения.</p>':'<p class="notice">Совместимость с вашей техникой и актуальные условия поставки уточняйте при обращении.</p>')+'</div>';
  }
 }
 
